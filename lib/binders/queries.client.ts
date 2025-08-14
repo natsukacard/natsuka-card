@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import type { Binder } from '@/lib/types';
+import type { Binder, QueryResult } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Binder types
@@ -16,11 +16,6 @@ type UpdateBinderValues = {
   name?: string;
   is_private?: boolean;
   type?: string;
-};
-
-type UpdateCardPositionsValues = {
-  binderId: string;
-  cards: { id: string; index: number }[];
 };
 
 export const useUpdateCardPositions = () => {
@@ -48,7 +43,9 @@ export const useUpdateCardPositions = () => {
         )
       );
 
-      const firstError = results.find((r: any) => r.error)?.error;
+      const firstError = results.find(
+        (r: QueryResult<unknown>) => r.error
+      )?.error;
       if (firstError) throw new Error(firstError.message);
 
       return { binderId, cards };
@@ -61,23 +58,28 @@ export const useUpdateCardPositions = () => {
       const previousBinder = queryClient.getQueryData(['binder', binderId]);
 
       // Optimistically update card positions
-      queryClient.setQueryData(['binder', binderId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(
+        ['binder', binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
 
-        const updatedCardsMap = new Map(
-          updatedCards.map((c) => [c.id, c.index])
-        );
+          const updatedCardsMap = new Map(
+            updatedCards.map((c) => [c.id, c.index])
+          );
 
-        return {
-          ...old,
-          cards: old.cards
-            .map((card: any) => ({
-              ...card,
-              index: updatedCardsMap.get(card.id) ?? card.index,
-            }))
-            .sort((a: any, b: any) => a.index - b.index),
-        };
-      });
+          return {
+            ...old,
+            cards: old.cards
+              ? old.cards
+                  .map((card) => ({
+                    ...card,
+                    index: updatedCardsMap.get(card.id) ?? card.index,
+                  }))
+                  .sort((a, b) => a.index - b.index)
+              : old.cards,
+          };
+        }
+      );
 
       return { previousBinder };
     },

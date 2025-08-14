@@ -44,7 +44,7 @@ export function BinderPagination({
   };
 
   const startCard = (currentPage - 1) * cardsPerPage + 1;
-  const endCard = Math.min(currentPage * cardsPerPage, totalCards);
+  const _endCard = Math.min(currentPage * cardsPerPage, totalCards);
 
   return (
     <Stack gap="sm" mt="xl">

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import type { Binder } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 type SortOption = 'relevance' | 'name' | 'set' | 'rarity' | 'artist';
@@ -111,36 +112,43 @@ export const useAddCardToBinder = () => {
       };
 
       // Optimistically update by adding the card
-      queryClient.setQueryData(['binder', binderId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(
+        ['binder', binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
 
-        // Remove any existing card at this index, then add the new one
-        const filteredCards = (old.cards || []).filter(
-          (card: any) => card.index !== index
-        );
+          // Remove any existing card at this index, then add the new one
+          const filteredCards = (old.cards || []).filter(
+            (card) => card.index !== index
+          );
 
-        return {
-          ...old,
-          cards: [...filteredCards, optimisticCard].sort(
-            (a: any, b: any) => a.index - b.index
-          ),
-        };
-      });
+          return {
+            ...old,
+            cards: [...filteredCards, optimisticCard].sort(
+              (a, b) => a.index - b.index
+            ),
+          };
+        }
+      );
 
       return { previousBinder, optimisticCard };
     },
     onSuccess: (data, variables, context) => {
       // Replace optimistic card with real data
-      queryClient.setQueryData(['binder', variables.binderId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(
+        ['binder', variables.binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
 
-        return {
-          ...old,
-          cards: old.cards.map((card: any) =>
-            card.id === context?.optimisticCard.id ? data : card
-          ),
-        };
-      });
+          return {
+            ...old,
+            cards:
+              old.cards?.map((card) =>
+                card.id === context?.optimisticCard.id ? data : card
+              ) || old.cards,
+          };
+        }
+      );
     },
     onError: (err, variables, context) => {
       // Rollback on error
@@ -164,7 +172,7 @@ export type { SearchFilters, SortDirection, SortOption };
 
 const deleteCardFromBinder = async ({
   cardId,
-  binderId,
+  binderId: _binderId,
 }: {
   cardId: string;
   binderId: string;

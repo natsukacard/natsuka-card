@@ -40,7 +40,7 @@ export function BinderCardItem({
     disabled: !isDragEnabled,
   });
 
-  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+  const { setNodeRef: setDroppableNodeRef } = useDroppable({
     id: `slot-${card.index}`,
     disabled: !isDragEnabled,
   });

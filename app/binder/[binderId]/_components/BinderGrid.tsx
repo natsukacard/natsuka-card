@@ -1,30 +1,16 @@
 'use client';
-import { type Card } from '@/lib/types';
+import { type BinderGridProps, type Card } from '@/lib/types';
 import { SimpleGrid } from '@mantine/core';
 import { useMemo } from 'react';
 import { BinderCardItem } from './BinderCardItem';
 import { EmptyCardSlot } from './EmptyCardSlot';
-
-interface BinderGridProps {
-  binder: any;
-  currentPage: number;
-  isOwner: boolean;
-  onSlotClick: (index: number) => void;
-  isDragging: boolean;
-  activeCard: Card | null;
-  previewSlot: number | null;
-  onDeleteCard?: (cardId: string, index: number) => void;
-  onInsertBefore?: (index: number) => void;
-  onInsertAfter?: (index: number) => void;
-  onDeleteEmptySlot?: (index: number) => void;
-}
 
 export function BinderGrid({
   binder,
   currentPage,
   isOwner,
   onSlotClick,
-  isDragging,
+  isDragging: _isDragging,
   activeCard,
   previewSlot,
   onDeleteCard,

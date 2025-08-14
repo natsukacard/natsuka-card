@@ -124,7 +124,7 @@ function SearchResultCard({ card }: { card: SearchResult }) {
 export function CardSearchSidebar({
   opened,
   onClose,
-  onCardSelect,
+  onCardSelect: _onCardSelect,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
@@ -190,7 +190,10 @@ export function CardSearchSidebar({
     { value: 'artist', label: 'Artist' },
   ];
 
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+  const handleFilterChange = (
+    key: keyof SearchFilters,
+    value: string | null | undefined
+  ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
@@ -212,7 +215,9 @@ export function CardSearchSidebar({
   }, [debouncedSearchTerm]);
 
   // Get selectedSlotIndex from store
-  const selectedSlotIndex = useSidebarStore((state) => state.selectedSlotIndex);
+  const _selectedSlotIndex = useSidebarStore(
+    (state) => state.selectedSlotIndex
+  );
 
   return (
     <Drawer

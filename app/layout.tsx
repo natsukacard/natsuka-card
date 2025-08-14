@@ -1,12 +1,13 @@
 import { MantineProvider } from '@/components/providers/MantineProvider';
 import { Providers } from '@/components/providers/Providers';
+import { NavBar } from '@/components/ui/NavBar';
 import '@mantine/core/styles.css';
 import { ContextMenuProvider } from 'mantine-contextmenu';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Lexend_Deca, Outfit } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
+const _geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
 });
@@ -17,7 +18,7 @@ const outfit = Outfit({
   display: 'swap',
 });
 
-const lexend = Lexend_Deca({
+const _lexend = Lexend_Deca({
   variable: '--font-lexend',
   subsets: ['latin'],
   display: 'swap',
@@ -43,7 +44,10 @@ export default function RootLayout({
       <body className={`${outfit.className} ${geistMono.variable} antialiased`}>
         <Providers>
           <MantineProvider>
-            <ContextMenuProvider>{children}</ContextMenuProvider>
+            <ContextMenuProvider>
+              <NavBar />
+              {children}
+            </ContextMenuProvider>
           </MantineProvider>
         </Providers>
       </body>
