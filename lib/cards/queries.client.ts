@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import type { Binder } from '@/lib/types';
+import type { Binder, Card } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 type SortOption = 'relevance' | 'name' | 'set' | 'rarity' | 'artist';
@@ -198,13 +198,16 @@ export const useDeleteCardFromBinder = () => {
       const previousBinder = queryClient.getQueryData(['binder', binderId]);
 
       // Optimistically update by removing the card
-      queryClient.setQueryData(['binder', binderId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          cards: old.cards.filter((card: any) => card.id !== cardId),
-        };
-      });
+      queryClient.setQueryData(
+        ['binder', binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            cards: old.cards?.filter((card) => card.id !== cardId) || old.cards,
+          };
+        }
+      );
 
       // Return context with previous and new values
       return { previousBinder };
@@ -281,22 +284,22 @@ const shiftCardsInBinder = async ({
   if (insertEmpty) {
     // Get cards that need to be shifted (from fromIndex onwards)
     const cardsToShift = cards
-      .filter((card: any) => card.index >= fromIndex)
-      .sort((a: any, b: any) => b.index - a.index); // Sort in descending order to avoid conflicts
+      .filter((card) => card.index >= fromIndex)
+      .sort((a, b) => b.index - a.index); // Sort in descending order to avoid conflicts
 
     console.log(
       'Cards to shift:',
-      cardsToShift.map((c: any) => ({ id: c.id, index: c.index }))
+      cardsToShift.map((c) => ({ id: c.id, index: c.index }))
     );
 
     // Delete cards that would exceed total slots after shifting
     const cardsToDelete = cardsToShift.filter(
-      (card: any) => card.index + 1 >= totalSlots
+      (card) => card.index + 1 >= totalSlots
     );
 
     console.log(
       'Cards to delete:',
-      cardsToDelete.map((c: any) => ({ id: c.id, index: c.index }))
+      cardsToDelete.map((c) => ({ id: c.id, index: c.index }))
     );
 
     // Delete excess cards first - use 'cards' table
@@ -314,12 +317,12 @@ const shiftCardsInBinder = async ({
 
     // Update remaining cards (shift them forward by 1) - use 'cards' table
     const cardsToUpdate = cardsToShift.filter(
-      (card: any) => card.index + 1 < totalSlots
+      (card) => card.index + 1 < totalSlots
     );
 
     console.log(
       'Cards to update:',
-      cardsToUpdate.map((c: any) => ({
+      cardsToUpdate.map((c) => ({
         id: c.id,
         oldIndex: c.index,
         newIndex: c.index + 1,
@@ -344,12 +347,12 @@ const shiftCardsInBinder = async ({
   } else {
     // Delete operation - shift cards back
     const cardsToShift = cards
-      .filter((card: any) => card.index > fromIndex)
-      .sort((a: any, b: any) => a.index - b.index); // Sort in ascending order
+      .filter((card) => card.index > fromIndex)
+      .sort((a, b) => a.index - b.index); // Sort in ascending order
 
     console.log(
       'Cards to shift back:',
-      cardsToShift.map((c: any) => ({
+      cardsToShift.map((c) => ({
         id: c.id,
         oldIndex: c.index,
         newIndex: c.index - 1,
@@ -390,38 +393,41 @@ export const useShiftCardsInBinder = () => {
       const previousBinder = queryClient.getQueryData(['binder', binderId]);
 
       // Optimistically update the cards
-      queryClient.setQueryData(['binder', binderId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(
+        ['binder', binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
 
-        const cards = [...(old.cards || [])];
-        const totalSlots = old.page_rows * old.page_columns * old.total_pages;
+          const cards = [...(old.cards || [])];
+          const totalSlots = old.page_rows * old.page_columns;
 
-        if (insertEmpty) {
-          // Shift cards forward and remove those that exceed total slots
-          const updatedCards = cards
-            .map((card: any) => ({
+          if (insertEmpty) {
+            // Shift cards forward and remove those that exceed total slots
+            const updatedCards = cards
+              .map((card: Card) => ({
+                ...card,
+                index: card.index >= fromIndex ? card.index + 1 : card.index,
+              }))
+              .filter((card: Card) => card.index < totalSlots);
+
+            return {
+              ...old,
+              cards: updatedCards,
+            };
+          } else {
+            // Shift cards back (for delete operation)
+            const updatedCards = cards.map((card: Card) => ({
               ...card,
-              index: card.index >= fromIndex ? card.index + 1 : card.index,
-            }))
-            .filter((card: any) => card.index < totalSlots);
+              index: card.index > fromIndex ? card.index - 1 : card.index,
+            }));
 
-          return {
-            ...old,
-            cards: updatedCards,
-          };
-        } else {
-          // Shift cards back (for delete operation)
-          const updatedCards = cards.map((card: any) => ({
-            ...card,
-            index: card.index > fromIndex ? card.index - 1 : card.index,
-          }));
-
-          return {
-            ...old,
-            cards: updatedCards,
-          };
+            return {
+              ...old,
+              cards: updatedCards,
+            };
+          }
         }
-      });
+      );
 
       return { previousBinder };
     },

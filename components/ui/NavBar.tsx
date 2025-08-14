@@ -1,6 +1,7 @@
 'use client';
 import { signOut } from '@/lib/auth/actions';
 import { useUser } from '@/lib/auth/queries';
+import { useSidebarStore } from '@/stores/sidebarStore';
 import {
   Anchor,
   Burger,
@@ -19,6 +20,7 @@ import { useRouter } from 'next/navigation';
 export function NavBar() {
   const router = useRouter();
   const { data: user, isLoading } = useUser();
+  const searchOpened = useSidebarStore((state) => state.searchOpened);
   const { mutate: handleSignOut } = useMutation({
     mutationFn: signOut,
     onSuccess: () => {
@@ -28,7 +30,13 @@ export function NavBar() {
   const [opened, { toggle, close }] = useDisclosure(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white">
+    <header
+      className="sticky top-0 z-50 bg-white"
+      style={{
+        marginRight: searchOpened ? '600px' : '0',
+        transition: 'margin-right 200ms ease',
+      }}
+    >
       <Container size="md">
         <nav className="flex h-16 items-center justify-between">
           <Link href="/" className="text-xl font-bold text-gray-800">

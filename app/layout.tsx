@@ -4,22 +4,11 @@ import { NavBar } from '@/components/ui/NavBar';
 import '@mantine/core/styles.css';
 import { ContextMenuProvider } from 'mantine-contextmenu';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Lexend_Deca, Outfit } from 'next/font/google';
+import { Geist_Mono, Outfit } from 'next/font/google';
 import './globals.css';
-
-const _geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
 
 const outfit = Outfit({
   variable: '--font-outfit',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const _lexend = Lexend_Deca({
-  variable: '--font-lexend',
   subsets: ['latin'],
   display: 'swap',
 });

@@ -4,7 +4,6 @@ import {
   type SortDirection,
   type SortOption,
 } from '@/lib/cards/queries.client';
-import { useSidebarStore } from '@/stores/sidebarStore';
 import { useDraggable } from '@dnd-kit/core';
 import {
   AspectRatio,
@@ -213,11 +212,6 @@ export function CardSearchSidebar({
   useMemo(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
-
-  // Get selectedSlotIndex from store
-  const _selectedSlotIndex = useSidebarStore(
-    (state) => state.selectedSlotIndex
-  );
 
   return (
     <Drawer
