@@ -1,5 +1,6 @@
 'use client';
 import { BinderSettingsModal } from '@/components/binders/BinderSettingsModal';
+import { CardDetailsModal } from '@/components/cards/CardDetailsModal';
 import { CardSearchSidebar } from '@/components/cards/CardSearchSidebar';
 import {
   useBinder,
@@ -66,10 +67,14 @@ export function BinderView({
   isOwner,
 }: BinderViewProps) {
   const [opened, { open, close }] = useDisclosure(false);
-
-  // Add mounted state to prevent hydration mismatch
+  const [
+    cardDetailsOpened,
+    { open: openCardDetails, close: closeCardDetails },
+  ] = useDisclosure(false);
+  const [selectedCard, setSelectedCard] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Add mounted state to prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -338,6 +343,37 @@ export function BinderView({
     );
   };
 
+  const handleCardClick = (card: Card) => {
+    if (card.pokemon_cards) {
+      const pokemonCard = card.pokemon_cards;
+      setSelectedCard({
+        id: card.id,
+        name: pokemonCard.name,
+        image_small: pokemonCard.image_small,
+        image_large: pokemonCard.image_large,
+        set_name: pokemonCard.pokemon_sets?.name || undefined,
+        card_number: pokemonCard.number || undefined,
+        rarity: pokemonCard.rarity || undefined,
+        artist: pokemonCard.artist || undefined,
+      });
+      openCardDetails();
+    }
+  };
+
+  const handleSearchCardClick = (card: SearchResult) => {
+    setSelectedCard({
+      id: card.id,
+      name: card.name,
+      image_small: card.image_small,
+      image_large: card.image_large,
+      set_name: card.set_name,
+      card_number: card.card_number,
+      rarity: card.rarity,
+      artist: card.artist,
+    });
+    openCardDetails();
+  };
+
   // Calculate pagination values
   const cardsPerPage = binder?.page_rows * binder?.page_columns || 9;
   const totalCards = binder?.cards?.length || 0;
@@ -452,6 +488,7 @@ export function BinderView({
           onInsertBefore={handleInsertEmptySlot}
           onInsertAfter={handleInsertEmptySlot}
           onDeleteEmptySlot={handleDeleteEmptySlot}
+          onCardClick={handleCardClick}
         />
 
         {/* Add the pagination component here */}
@@ -522,6 +559,12 @@ export function BinderView({
         opened={searchOpened}
         onClose={closeSearch}
         onCardSelect={handleCardSelect}
+        onCardClick={handleSearchCardClick}
+      />
+      <CardDetailsModal
+        opened={cardDetailsOpened}
+        onClose={closeCardDetails}
+        card={selectedCard}
       />
     </Container>
   );

@@ -2,9 +2,17 @@ export type Card = {
   id: string;
   index: number;
   pokemon_cards: {
+    id: string;
+    name: string;
     image_small: string | null;
     image_large: string | null;
-    name: string;
+    number?: string | null;
+    rarity?: string | null;
+    artist?: string | null;
+    pokemon_sets?: {
+      name: string;
+      id: string;
+    } | null;
   } | null;
 };
 

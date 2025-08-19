@@ -19,7 +19,7 @@ export const getBinderByIdServer = async (binderId: string) => {
     throw new Error(binderError.message);
   }
 
-  // Get cards with pokemon_cards data
+  // Get cards with pokemon_cards data - fix the relationship name
   const { data: cards, error: cardsError } = await supabase
     .from('cards')
     .select(
@@ -35,7 +35,11 @@ export const getBinderByIdServer = async (binderId: string) => {
         id,
         name,
         image_small,
-        image_large
+        image_large,
+        number,
+        artist,
+        rarity,
+        pokemon_sets(name, id)
       )
     `
     )

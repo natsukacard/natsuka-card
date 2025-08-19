@@ -14,6 +14,7 @@ interface BinderCardItemProps {
   onDelete?: (cardId: string, index: number) => void;
   onInsertBefore?: (index: number) => void;
   onInsertAfter?: (index: number) => void;
+  onCardClick?: (card: Card) => void;
 }
 
 export function BinderCardItem({
@@ -26,6 +27,7 @@ export function BinderCardItem({
   onDelete,
   onInsertBefore,
   onInsertAfter,
+  onCardClick,
 }: BinderCardItemProps) {
   const cardData = card.pokemon_cards;
 
@@ -77,6 +79,14 @@ export function BinderCardItem({
     onInsertAfter?.(card.index + 1);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only prevent click if we're in the middle of dragging
+    if (isDragging) {
+      return;
+    }
+    onCardClick?.(card);
+  };
+
   const cardContent = (
     <div
       ref={setDroppableNodeRef}
@@ -91,7 +101,9 @@ export function BinderCardItem({
           {...(isDragEnabled ? attributes : {})}
           style={style}
           radius="lg"
-          className={`overflow-hidden shadow-sm transition-transform ${showPreview ? 'opacity-30' : ''}`}
+          className={`overflow-hidden shadow-sm transition-transform cursor-pointer ${showPreview ? 'opacity-30' : ''}`}
+          onClick={handleCardClick}
+          data-drag-handle
         >
           <AspectRatio ratio={63 / 88}>
             {cardData?.image_large ? (
@@ -111,27 +123,29 @@ export function BinderCardItem({
         </Paper>
       )}
 
-      {/* Preview Card Overlay */}
-      {showPreview && (
-        <div className="absolute inset-0 z-10">
-          <Paper radius="lg" className="overflow-hidden shadow-md opacity-80">
-            <AspectRatio ratio={63 / 88}>
-              {previewCard.pokemon_cards?.image_large ? (
-                <Image
-                  src={previewCard.pokemon_cards.image_large}
-                  alt={previewCard.pokemon_cards.name}
-                  fit="contain"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                  <Text size="xs" c="dimmed">
-                    no image
-                  </Text>
-                </div>
-              )}
-            </AspectRatio>
-          </Paper>
-        </div>
+      {/* Preview Card */}
+      {showPreview && previewCard && (
+        <Paper
+          radius="lg"
+          className="absolute inset-0 overflow-hidden shadow-sm border-2 border-blue-300"
+        >
+          <AspectRatio ratio={63 / 88}>
+            {previewCard.pokemon_cards?.image_large ? (
+              <Image
+                src={previewCard.pokemon_cards.image_large}
+                alt={previewCard.pokemon_cards.name}
+                fit="contain"
+                className="opacity-80"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-blue-50">
+                <Text size="xs" c="blue">
+                  preview
+                </Text>
+              </div>
+            )}
+          </AspectRatio>
+        </Paper>
       )}
     </div>
   );

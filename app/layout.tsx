@@ -1,5 +1,6 @@
 import { MantineProvider } from '@/components/providers/MantineProvider';
 import { Providers } from '@/components/providers/Providers';
+import { Footer } from '@/components/ui/Footer';
 import { NavBar } from '@/components/ui/NavBar';
 import '@mantine/core/styles.css';
 import { ContextMenuProvider } from 'mantine-contextmenu';
@@ -36,6 +37,7 @@ export default function RootLayout({
             <ContextMenuProvider>
               <NavBar />
               {children}
+              <Footer />
             </ContextMenuProvider>
           </MantineProvider>
         </Providers>

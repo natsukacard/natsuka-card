@@ -29,6 +29,7 @@ interface CardSearchSidebarProps {
   opened: boolean;
   onClose: () => void;
   onCardSelect: (cardId: string) => void;
+  onCardClick?: (card: SearchResult) => void;
 }
 
 type SearchResult = {
@@ -43,14 +44,20 @@ type SearchResult = {
   artist: string;
 };
 
-function SearchResultCard({ card }: { card: SearchResult }) {
+function SearchResultCard({
+  card,
+  onCardClick,
+}: {
+  card: SearchResult;
+  onCardClick?: (card: SearchResult) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: `search-${card.id}`,
       data: {
         type: 'search-result',
         pokemonCardId: card.id,
-        card: card, // Pass the card data for the overlay
+        card: card,
       },
     });
 
@@ -66,6 +73,12 @@ function SearchResultCard({ card }: { card: SearchResult }) {
 
   const imageUrl = card.image_large || card.image_small;
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isDragging) {
+      onCardClick?.(card);
+    }
+  };
+
   return (
     <div className="relative transition-all duration-200">
       <Paper
@@ -78,6 +91,7 @@ function SearchResultCard({ card }: { card: SearchResult }) {
           isDragging ? 'opacity-50' : ''
         }`}
         p="xs"
+        onClick={handleClick}
       >
         <AspectRatio ratio={63 / 88} mb="xs">
           {imageUrl ? (
@@ -124,6 +138,7 @@ export function CardSearchSidebar({
   opened,
   onClose,
   onCardSelect: _onCardSelect,
+  onCardClick,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
@@ -343,6 +358,7 @@ export function CardSearchSidebar({
                 <SearchResultCard
                   key={`${card.id}-${index}-${currentPage}`}
                   card={card}
+                  onCardClick={onCardClick}
                 />
               ))}
             </SimpleGrid>

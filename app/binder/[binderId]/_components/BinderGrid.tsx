@@ -17,7 +17,8 @@ export function BinderGrid({
   onInsertBefore,
   onInsertAfter,
   onDeleteEmptySlot,
-}: BinderGridProps) {
+  onCardClick,
+}: BinderGridProps & { onCardClick?: (card: Card) => void }) {
   const cardsPerPage = binder.page_rows * binder.page_columns;
   const startIndex = (currentPage - 1) * cardsPerPage;
 
@@ -46,6 +47,7 @@ export function BinderGrid({
           onDelete={onDeleteCard}
           onInsertBefore={onInsertBefore}
           onInsertAfter={onInsertAfter}
+          onCardClick={onCardClick}
         />
       );
     }
