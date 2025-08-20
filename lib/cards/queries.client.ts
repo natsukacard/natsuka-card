@@ -2,7 +2,14 @@ import { createClient } from '@/lib/supabase/client';
 import type { Binder, Card } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-type SortOption = 'relevance' | 'name' | 'set' | 'rarity' | 'artist';
+type SortOption =
+  | 'relevance'
+  | 'name'
+  | 'set'
+  | 'rarity'
+  | 'artist'
+  | 'number'
+  | 'release_date';
 type SortDirection = 'asc' | 'desc';
 
 interface SearchFilters {

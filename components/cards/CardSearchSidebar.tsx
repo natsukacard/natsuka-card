@@ -200,8 +200,10 @@ export function CardSearchSidebar({
     { value: 'relevance', label: 'Relevance' },
     { value: 'name', label: 'Name' },
     { value: 'set', label: 'Set' },
+    { value: 'number', label: 'Card Number' },
     { value: 'rarity', label: 'Rarity' },
     { value: 'artist', label: 'Artist' },
+    { value: 'release_date', label: 'Release Date' },
   ];
 
   const handleFilterChange = (

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
 interface SearchState {
   searchTerm: string;
@@ -7,7 +7,7 @@ interface SearchState {
   filters: {
     setFilter?: string;
     rarityFilter?: string;
-    sortBy: 'relevance' | 'name' | 'set' | 'rarity' | 'artist';
+    sortBy: 'relevance' | 'name' | 'set' | 'rarity' | 'artist' | 'number';
     sortDirection: 'asc' | 'desc';
   };
   setSearchTerm: (term: string) => void;
@@ -17,37 +17,34 @@ interface SearchState {
 }
 
 export const useSearchStore = create<SearchState>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        searchTerm: '',
-        recentSearches: [],
-        filters: {
-          sortBy: 'relevance',
-          sortDirection: 'desc',
-        },
-        setSearchTerm: (term) => set({ searchTerm: term }),
-        addRecentSearch: (term) => {
-          const { recentSearches } = get();
-          const filtered = recentSearches.filter((s) => s !== term);
-          set({ recentSearches: [term, ...filtered].slice(0, 10) });
-        },
-        updateFilters: (newFilters) =>
-          set((state) => ({
-            filters: { ...state.filters, ...newFilters },
-          })),
-        clearFilters: () =>
-          set({
-            filters: {
-              setFilter: undefined,
-              rarityFilter: undefined,
-              sortBy: 'relevance',
-              sortDirection: 'desc',
-            },
-          }),
-      }),
-      { name: 'search-store' }
-    ),
+  persist(
+    (set, get) => ({
+      searchTerm: '',
+      recentSearches: [],
+      filters: {
+        sortBy: 'relevance',
+        sortDirection: 'desc',
+      },
+      setSearchTerm: (term) => set({ searchTerm: term }),
+      addRecentSearch: (term) => {
+        const { recentSearches } = get();
+        const filtered = recentSearches.filter((s) => s !== term);
+        set({ recentSearches: [term, ...filtered].slice(0, 10) });
+      },
+      updateFilters: (newFilters) =>
+        set((state) => ({
+          filters: { ...state.filters, ...newFilters },
+        })),
+      clearFilters: () =>
+        set({
+          filters: {
+            setFilter: undefined,
+            rarityFilter: undefined,
+            sortBy: 'relevance',
+            sortDirection: 'desc',
+          },
+        }),
+    }),
     { name: 'search-store' }
   )
 );
