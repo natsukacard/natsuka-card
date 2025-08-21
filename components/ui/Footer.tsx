@@ -10,7 +10,7 @@ import classes from './Footer.module.css';
 
 const links = [
   { link: '#', label: 'contact us' },
-  { link: '#', label: 'privacy policy' },
+  { link: '/privacy', label: 'privacy policy' },
   { link: '#', label: 'terms of service' },
 ];
 
@@ -34,7 +34,7 @@ export function Footer() {
         <div className={classes.inner}>
           <Group>
             <Text c="white" size="sm">
-              © 2025 natsuka. all rights reserved.
+              © {new Date().getFullYear()} natsuka. all rights reserved.
             </Text>
           </Group>
 
@@ -56,7 +56,7 @@ export function Footer() {
         </div>
 
         <div className="my-2">
-          <Text c="white" size="xs" ta="center">
+          <Text c="white" size="xs" ta="center" className="lowercase">
             All Trading Card Game (TCG) collections, card images, and associated
             intellectual property referenced on this platform are owned by their
             respective companies. We do not claim ownership of any third-party
