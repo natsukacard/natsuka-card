@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <Title order={3} c="dark.4" ta="center" className="lowercase">
           privacy policy
         </Title>
-        <Text size="sm" c="dark.4" ta="center" className="lowercase">
+        <Text size="sm" c="dark.2" ta="center" className="lowercase">
           last updated: august 21, 2025
         </Text>
         <Text size="sm" c="dark.4" pt={10} className="lowercase">
