@@ -23,7 +23,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { IconFilter, IconSearch, IconX } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface CardSearchSidebarProps {
   opened: boolean;
@@ -73,7 +73,7 @@ function SearchResultCard({
 
   const imageUrl = card.image_large || card.image_small;
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = () => {
     if (!isDragging) {
       onCardClick?.(card);
     }
@@ -137,7 +137,7 @@ function SearchResultCard({
 export function CardSearchSidebar({
   opened,
   onClose,
-  onCardSelect: _onCardSelect,
+  onCardSelect: _onCardSelect, // Currently not used but may be needed for future features
   onCardClick,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -158,7 +158,10 @@ export function CardSearchSidebar({
     filters
   );
 
-  const results: SearchResult[] = searchResults || [];
+  const results: SearchResult[] = useMemo(
+    () => searchResults || [],
+    [searchResults]
+  );
 
   const CARDS_PER_PAGE = 9;
   const totalPages = Math.ceil(results.length / CARDS_PER_PAGE);
@@ -170,18 +173,37 @@ export function CardSearchSidebar({
   }, [results, currentPage]);
 
   const suggestions = useMemo(() => {
-    const uniqueNames = new Set<string>();
-    return results
-      .map((card) => card.name)
-      .filter((name) => {
-        if (uniqueNames.has(name)) {
-          return false;
-        }
-        uniqueNames.add(name);
-        return true;
-      })
-      .slice(0, 10);
-  }, [results]);
+    if (!debouncedSearchTerm) return [];
+
+    const uniqueItems = new Set<string>();
+    const allSuggestions: string[] = [];
+
+    // Add card names
+    results.forEach((card) => {
+      if (
+        card.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) &&
+        !uniqueItems.has(card.name)
+      ) {
+        uniqueItems.add(card.name);
+        allSuggestions.push(card.name);
+      }
+    });
+
+    // Add set names
+    results.forEach((card) => {
+      if (
+        card.set_name
+          .toLowerCase()
+          .includes(debouncedSearchTerm.toLowerCase()) &&
+        !uniqueItems.has(card.set_name)
+      ) {
+        uniqueItems.add(card.set_name);
+        allSuggestions.push(card.set_name);
+      }
+    });
+
+    return allSuggestions.slice(0, 10);
+  }, [results, debouncedSearchTerm]);
 
   // Get unique values for filter dropdowns
   const uniqueSets = useMemo(() => {
@@ -226,7 +248,7 @@ export function CardSearchSidebar({
 
   const hasActiveFilters = filters.setFilter || filters.rarityFilter;
 
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
 

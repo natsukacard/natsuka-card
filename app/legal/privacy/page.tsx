@@ -21,9 +21,10 @@ export default function PrivacyPage() {
           last updated: august 21, 2025
         </Text>
         <Text size="sm" c="dark.4" pt={10} className="lowercase">
-          natsuka ("we", "us", "our", and "service") is committed to protecting
-          your privacy. this privacy policy describes how we collect, use, and
-          share your personal data when you use our website.
+          natsuka (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;, and
+          &ldquo;service&rdquo;) is committed to protecting your privacy. this
+          privacy policy describes how we collect, use, and share your personal
+          data when you use our website.
         </Text>
 
         <Text size="md" fw={600} c="dark.6" pt={10} className="lowercase">
@@ -79,13 +80,13 @@ export default function PrivacyPage() {
             usage information.
           </Text>{' '}
           we collect and analyze information about how our service, natsuka, is
-          accessed, used, and performs. we refer to this as "usage data."
-          examples of usage data include metadata, telemetry, and other
-          technical information. while we may track usage statistics related to
-          your content (like how often it is accessed), usage data never
-          includes the content itself. in some cases, this data may include
-          personal information, such as details about your interactions with
-          other users.
+          accessed, used, and performs. we refer to this as &ldquo;usage
+          data.&rdquo; examples of usage data include metadata, telemetry, and
+          other technical information. while we may track usage statistics
+          related to your content (like how often it is accessed), usage data
+          never includes the content itself. in some cases, this data may
+          include personal information, such as details about your interactions
+          with other users.
         </Text>
         <Text size="sm" c="dark.4" className="lowercase">
           <Text span fw={600} c="dark.6">
@@ -141,7 +142,8 @@ export default function PrivacyPage() {
           for analytics, we use services like{' '}
           <span style={{ textTransform: 'none' }}>Google</span> analytics to
           process information about your activity. you can learn more about{' '}
-          <span style={{ textTransform: 'none' }}>Google</span>'s practices at{' '}
+          <span style={{ textTransform: 'none' }}>Google</span>&apos;s practices
+          at{' '}
           <Anchor
             href="https://www.google.com/policies/privacy/partners/"
             target="_blank"
@@ -281,11 +283,12 @@ export default function PrivacyPage() {
         </Text>
         <Divider />
         <Text size="sm" c="dark.4" className="lowercase">
-          your information, including personal data, is processed at natsuka's
-          operating offices and may be stored on servers in other locations.
-          this means your information may be transferred to and maintained on
-          computers located outside of your state, province, or country, where
-          data protection laws may differ from those in your jurisdiction.
+          your information, including personal data, is processed at
+          natsuka&apos;s operating offices and may be stored on servers in other
+          locations. this means your information may be transferred to and
+          maintained on computers located outside of your state, province, or
+          country, where data protection laws may differ from those in your
+          jurisdiction.
         </Text>
         <Text size="sm" c="dark.4" className="lowercase">
           by providing us with your information and consenting to this{' '}
@@ -354,7 +357,7 @@ export default function PrivacyPage() {
         </List>
         <Text size="sm" c="dark.4" className="lowercase">
           to exercise any of these rights, please contact us through the methods
-          described in the "contact us" section.
+          described in the &ldquo;contact us&rdquo; section.
         </Text>
 
         <Text size="md" fw={600} pt={10} c="dark.6" className="lowercase">
@@ -408,7 +411,7 @@ export default function PrivacyPage() {
         </List>
 
         <Text size="md" fw={600} pt={10} c="dark.6" className="lowercase">
-          children's privacy
+          children&apos;s privacy
         </Text>
         <Divider />
         <Text size="sm" c="dark.4" className="lowercase">
@@ -432,8 +435,8 @@ export default function PrivacyPage() {
           <span style={{ textTransform: 'none' }}>Privacy Policy</span> from
           time to time. we will notify you of any changes by posting the new{' '}
           <span style={{ textTransform: 'none' }}>Privacy Policy</span> on this
-          page and updating the "last updated" date at the top. you are advised
-          to review this{' '}
+          page and updating the &ldquo;last updated&rdquo; date at the top. you
+          are advised to review this{' '}
           <span style={{ textTransform: 'none' }}>Privacy Policy</span>{' '}
           periodically for any changes.
         </Text>

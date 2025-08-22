@@ -14,6 +14,7 @@ import { IconCheck, IconX } from '@tabler/icons-react';
 import { useMutation } from '@tanstack/react-query';
 import { z } from 'zod';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const contactSchema = z.object({
   name: z.string().min(1, { message: 'Please enter your name' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -161,6 +162,7 @@ export default function ContactPage() {
 
           <Button
             type="submit"
+            color="#8d84b0"
             fullWidth
             mt="xl"
             loading={mutation.isPending}

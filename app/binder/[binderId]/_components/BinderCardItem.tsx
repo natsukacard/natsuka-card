@@ -79,7 +79,7 @@ export function BinderCardItem({
     onInsertAfter?.(card.index + 1);
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = () => {
     // Only prevent click if we're in the middle of dragging
     if (isDragging) {
       return;

@@ -17,18 +17,19 @@ export default function TermsPage() {
           1. agreement to terms
         </Text>
         <Text size="sm" c="dark.4" className="lowercase">
-          these terms of service ("terms") are a binding legal agreement between
-          you and <span style={{ textTransform: 'none' }}>Pema Sherpa</span>,
-          doing business as{' '}
-          <span style={{ textTransform: 'none' }}>Natsuka</span> ("we," "us," or
-          "our"), concerning your use of our website natsukacard.com (the
-          "site") and any other related products and services we offer. by
-          accessing the services, you confirm that you have read, understood,
-          and agree to be bound by all of these terms. if you do not agree with
-          all of these terms, then you are expressly prohibited from using the
-          services and you must discontinue use immediately. we may make changes
-          to these terms from time to time and will notify you of any material
-          changes through a prominent banner on our site or other communication.
+          these terms of service (&ldquo;terms&rdquo;) are a binding legal
+          agreement between you and{' '}
+          <span style={{ textTransform: 'none' }}>Pema Sherpa</span>, doing
+          business as <span style={{ textTransform: 'none' }}>Natsuka</span>{' '}
+          (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;), concerning
+          your use of our website natsukacard.com (the &ldquo;site&rdquo;) and
+          any other related products and services we offer. by accessing the
+          services, you confirm that you have read, understood, and agree to be
+          bound by all of these terms. if you do not agree with all of these
+          terms, then you are expressly prohibited from using the services and
+          you must discontinue use immediately. we may make changes to these
+          terms from time to time and will notify you of any material changes
+          through a prominent banner on our site or other communication.
         </Text>
         <Divider my={10} />
 
@@ -63,10 +64,10 @@ export default function TermsPage() {
           we are the owner or licensee of all intellectual property rights in
           our services, including all source code, databases, functionality,
           software, website designs, audio, video, text, photographs, and
-          graphics (the "content"), as well as the trademarks, service marks,
-          and logos contained therein (the "marks"). our content and marks are
-          provided through the services "as is" for your personal,
-          non-commercial use only.
+          graphics (the &ldquo;content&rdquo;), as well as the trademarks,
+          service marks, and logos contained therein (the &ldquo;marks&rdquo;).
+          our content and marks are provided through the services &ldquo;as
+          is&rdquo; for your personal, non-commercial use only.
         </Text>
         <Text size="sm" fw={600} c="dark.4" className="lowercase">
           3.2 your use of our services
@@ -97,15 +98,15 @@ export default function TermsPage() {
         >
           <List.Item>
             <strong>submissions.</strong> if you send us any question, comment,
-            suggestion, or feedback ("submissions"), you agree to assign to us
-            all intellectual property rights in such submission. we will own the
-            submission and can use it for any lawful purpose without
-            acknowledgment or compensation to you.
+            suggestion, or feedback (&ldquo;submissions&rdquo;), you agree to
+            assign to us all intellectual property rights in such submission. we
+            will own the submission and can use it for any lawful purpose
+            without acknowledgment or compensation to you.
           </List.Item>
           <List.Item>
             <strong>contributions.</strong> we may allow you to create, submit,
             or post content, including text, videos, photos, comments, and
-            reviews ("contributions").
+            reviews (&ldquo;contributions&rdquo;).
           </List.Item>
           <List.Item>
             <strong>contribution license.</strong> by posting your
@@ -143,7 +144,8 @@ export default function TermsPage() {
           that any material on the services infringes upon a copyright you own
           or control, please refer to the{' '}
           <span style={{ textTransform: 'none' }}>
-            "Digital Millennium Copyright Act (DMCA) Notice and Policy"
+            &ldquo;Digital Millennium Copyright Act (DMCA) Notice and
+            Policy&rdquo;
           </span>{' '}
           section below.
         </Text>
@@ -273,7 +275,7 @@ export default function TermsPage() {
             engage in any automated use of the system, like data mining or bots.
           </List.Item>
           <List.Item mb={4}>
-            impersonate another user or use another user's account.
+            impersonate another user or use another user&apos;s account.
           </List.Item>
           <List.Item mb={4}>
             use the services to compete with us or for any commercial enterprise
@@ -299,11 +301,11 @@ export default function TermsPage() {
           12. third-party websites and content
         </Text>
         <Text size="sm" c="dark.4" className="lowercase">
-          the services may contain links to other websites ("third-party
-          websites") and content from third parties ("third-party content"). we
-          are not responsible for and do not endorse any third-party websites or
-          third-party content. if you choose to access them, you do so at your
-          own risk, and these terms no longer apply.
+          the services may contain links to other websites (&ldquo;third-party
+          websites&rdquo;) and content from third parties (&ldquo;third-party
+          content&rdquo;). we are not responsible for and do not endorse any
+          third-party websites or third-party content. if you choose to access
+          them, you do so at your own risk, and these terms no longer apply.
         </Text>
         <Divider my={10} />
 
@@ -323,10 +325,10 @@ export default function TermsPage() {
         <Text size="sm" c="dark.4" className="lowercase">
           we reserve the right, but not the obligation, to: (1) monitor the
           services for violations of these terms; (2) take appropriate legal
-          action against violators; (3) refuse, restrict, or disable any user's
-          contribution; and (4) manage the services in a manner designed to
-          protect our rights and property and facilitate the proper functioning
-          of the services.
+          action against violators; (3) refuse, restrict, or disable any
+          user&apos;s contribution; and (4) manage the services in a manner
+          designed to protect our rights and property and facilitate the proper
+          functioning of the services.
         </Text>
         <Divider my={10} />
 
@@ -390,7 +392,7 @@ export default function TermsPage() {
           (30) days. if informal negotiations are unsuccessful, the dispute will
           be resolved by binding arbitration under the rules of the{' '}
           <span style={{ textTransform: 'none' }}>
-            American Arbitration Association ("AAA")
+            American Arbitration Association (&ldquo;AAA&rdquo;)
           </span>
           . you understand that without this provision, you would have the right
           to sue in court and have a jury trial.

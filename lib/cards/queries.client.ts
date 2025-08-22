@@ -179,7 +179,7 @@ export type { SearchFilters, SortDirection, SortOption };
 
 const deleteCardFromBinder = async ({
   cardId,
-  binderId: _binderId,
+  binderId: _binderId, // Currently not used but may be needed for validation
 }: {
   cardId: string;
   binderId: string;

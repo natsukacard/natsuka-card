@@ -55,6 +55,18 @@ type SearchResult = {
   artist: string;
 };
 
+// Add CardDetails type for the modal
+type CardDetails = {
+  id: string;
+  name: string;
+  image_small?: string | null;
+  image_large?: string | null;
+  set_name?: string;
+  card_number?: string;
+  rarity?: string;
+  artist?: string;
+};
+
 interface BinderViewProps {
   binderId: string;
   currentPage: number;
@@ -71,7 +83,7 @@ export function BinderView({
     cardDetailsOpened,
     { open: openCardDetails, close: closeCardDetails },
   ] = useDisclosure(false);
-  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [selectedCard, setSelectedCard] = useState<CardDetails | null>(null);
   const [mounted, setMounted] = useState(false);
 
   // Add mounted state to prevent hydration mismatch
@@ -552,15 +564,16 @@ export function BinderView({
             </Paper>
           )}
         </DragOverlay>
+
+        <CardSearchSidebar
+          opened={searchOpened}
+          onClose={closeSearch}
+          onCardSelect={handleCardSelect}
+          onCardClick={handleSearchCardClick}
+        />
       </DndContext>
 
       <BinderSettingsModal opened={opened} onClose={close} binder={binder} />
-      <CardSearchSidebar
-        opened={searchOpened}
-        onClose={closeSearch}
-        onCardSelect={handleCardSelect}
-        onCardClick={handleSearchCardClick}
-      />
       <CardDetailsModal
         opened={cardDetailsOpened}
         onClose={closeCardDetails}

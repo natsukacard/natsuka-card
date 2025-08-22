@@ -10,7 +10,7 @@ export function BinderGrid({
   currentPage,
   isOwner,
   onSlotClick,
-  isDragging: _isDragging,
+  isDragging: _isDragging, // Currently not used but may be needed for future features
   activeCard,
   previewSlot,
   onDeleteCard,

@@ -9,21 +9,14 @@ import {
 import classes from './Footer.module.css';
 
 const links = [
-  { link: '#', label: 'contact us' },
-  { link: '/privacy', label: 'privacy policy' },
-  { link: '#', label: 'terms of service' },
+  { link: '/contact', label: 'contact us' },
+  { link: '/legal/privacy', label: 'privacy policy' },
+  { link: '/legal/terms', label: 'terms of service' },
 ];
 
 export function Footer() {
   const items = links.map((link) => (
-    <Anchor
-      c="white"
-      key={link.label}
-      href={link.link}
-      lh={1}
-      onClick={(event) => event?.preventDefault()}
-      size="sm"
-    >
+    <Anchor c="white" key={link.label} href={link.link} lh={1} size="sm">
       {link.label}
     </Anchor>
   ));
