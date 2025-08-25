@@ -53,6 +53,32 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
 };
 
 /**
+ * Requests a password reset email
+ */
+export const requestPasswordReset = async ({ email }: { email: string }) => {
+  const supabase = createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/reset-password`,
+  });
+
+  if (error) throw new Error(error.message);
+};
+
+/**
+ * Updates the user's password
+ */
+export const updatePassword = async ({ password }: { password: string }) => {
+  const supabase = createClient();
+  const { error } = await supabase.auth.updateUser({
+    password: password,
+  });
+
+  if (error) throw new Error(error.message);
+
+  await queryClient.invalidateQueries({ queryKey: ['user'] });
+};
+
+/**
  * Google OAuth sign-in flow
  * Redirects the user to the Google's authentication page
  */

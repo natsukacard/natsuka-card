@@ -137,7 +137,7 @@ function SearchResultCard({
 export function CardSearchSidebar({
   opened,
   onClose,
-  onCardSelect: _onCardSelect, // Currently not used but may be needed for future features
+  onCardSelect: _onCardSelect,
   onCardClick,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');

@@ -77,6 +77,18 @@ export function SignInForm() {
               {...register('password')}
               error={errors.password?.message}
             />
+
+            <Text ta="right">
+              <Anchor
+                component="button"
+                type="button"
+                size="xs"
+                onClick={() => router.push('/forgot-password')}
+              >
+                forgot password?
+              </Anchor>
+            </Text>
+
             {error && (
               <Text c="red" size="sm" ta="center">
                 {error.message}
