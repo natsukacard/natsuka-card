@@ -121,7 +121,10 @@ export function EmptyCardSlot({
           }}
           className={`overflow-hidden transition-transform ${showPreview ? 'opacity-30' : ''}`}
         >
-          <AspectRatio ratio={63 / 88}>
+          <AspectRatio
+            ratio={63 / 88}
+            style={{ width: '400px', height: 'auto' }}
+          >
             <div className="flex h-full w-full items-center justify-center rounded-lg">
               {isOwner && !showPreview ? (
                 <Text size="xs" c="dimmed">
