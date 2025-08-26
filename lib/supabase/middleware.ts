@@ -29,41 +29,52 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  try {
+    // IMPORTANT: DO NOT REMOVE auth.getClaims()
+    const { data } = await supabase.auth.getClaims();
+    const user = data?.claims;
 
-  // IMPORTANT: DO NOT REMOVE auth.getClaims()
+    // Define public routes that don't require authentication
+    const publicRoutes = [
+      '/',
+      '/login',
+      '/signup',
+      '/forgot-password',
+      '/reset-password',
+      '/confirm',
+      '/legal/privacy',
+      '/legal/terms',
+      '/contact',
+    ];
 
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+    const pathname = request.nextUrl.pathname;
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/') &&
-    !request.nextUrl.pathname.startsWith('/legal/privacy') &&
-    !request.nextUrl.pathname.startsWith('/legal/terms')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    // Check if current path is a public route
+    const isPublicRoute = publicRoutes.some((route) => {
+      if (route === '/') {
+        return pathname === '/';
+      }
+      return pathname.startsWith(route);
+    });
+
+    // Redirect unauthenticated users to login if accessing protected routes
+    if (!user && !isPublicRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
+    // Optional: Redirect authenticated users away from auth pages
+    if (user && (pathname === '/login' || pathname === '/signup')) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  } catch (error) {
+    console.error('Middleware error:', error);
+    // Return the response even if there's an error to avoid breaking the app
+    return supabaseResponse;
   }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
-  return supabaseResponse;
 }
