@@ -1,4 +1,10 @@
 import {
+  faArrowRightArrowLeft,
+  faBook,
+  faChartLine,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
   Badge,
   Button,
   Card,
@@ -8,11 +14,6 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import {
-  IconArrowsExchange,
-  IconBook,
-  IconTrendingUp,
-} from '@tabler/icons-react';
 import Link from 'next/link';
 
 export default function Page() {
@@ -24,7 +25,7 @@ export default function Page() {
           <Stack align="center" gap="xl">
             <Badge
               variant="outline"
-              color="#8d84b0"
+              color="#fc66a7"
               size="md"
               style={{ textTransform: 'none' }}
             >
@@ -40,7 +41,7 @@ export default function Page() {
                 style={{ textTransform: 'none' }}
               >
                 elevate your{' '}
-                <span style={{ color: '#8d84b0' }}>collection game</span>
+                <span style={{ color: '#6796ec' }}>collection game</span>
               </Title>
               <Text
                 size="lg"
@@ -58,7 +59,7 @@ export default function Page() {
               <Button
                 component={Link}
                 href="/signup"
-                color="#8d84b0"
+                color="#6796ec"
                 radius="xl"
                 size="lg"
                 style={{ textTransform: 'none' }}
@@ -102,7 +103,11 @@ export default function Page() {
             >
               <Stack gap="md" p="md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg">
-                  <IconBook size={48} style={{ color: '#8d84b0' }} />
+                  <FontAwesomeIcon
+                    icon={faBook}
+                    size="2x"
+                    style={{ color: '#6796ec' }}
+                  />
                 </div>
                 <Text fw={500} size="lg" style={{ textTransform: 'none' }}>
                   plan your binders
@@ -122,7 +127,11 @@ export default function Page() {
             >
               <Stack gap="md" p="md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg">
-                  <IconTrendingUp size={48} style={{ color: '#8d84b0' }} />
+                  <FontAwesomeIcon
+                    icon={faChartLine}
+                    size="2x"
+                    style={{ color: '#6796ec' }}
+                  />
                 </div>
                 <Text fw={500} size="lg" style={{ textTransform: 'none' }}>
                   track the markets
@@ -142,7 +151,11 @@ export default function Page() {
             >
               <Stack gap="md" p="md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg">
-                  <IconArrowsExchange size={48} style={{ color: '#8d84b0' }} />
+                  <FontAwesomeIcon
+                    icon={faArrowRightArrowLeft}
+                    size="2x"
+                    style={{ color: '#6796ec' }}
+                  />
                 </div>
                 <Text fw={500} size="lg" style={{ textTransform: 'none' }}>
                   find trades

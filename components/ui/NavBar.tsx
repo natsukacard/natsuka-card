@@ -84,7 +84,7 @@ export function NavBar() {
                   href="/signup"
                   size="xs"
                   radius="xl"
-                  color="#8d84b0"
+                  color="#6796ec"
                 >
                   sign up
                 </Button>

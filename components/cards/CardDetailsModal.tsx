@@ -1,4 +1,14 @@
-import { AspectRatio, Group, Image, Modal, Stack, Text } from '@mantine/core';
+import { useCardPrice } from '@/lib/pricing/queries.client'; // Import the new hook
+import {
+  Anchor,
+  AspectRatio,
+  Group,
+  Image,
+  Loader,
+  Modal,
+  Stack,
+  Text,
+} from '@mantine/core';
 
 interface CardDetailsModalProps {
   opened: boolean;
@@ -12,6 +22,10 @@ interface CardDetailsModalProps {
     card_number?: string;
     rarity?: string;
     artist?: string;
+    tcgplayer_product_id?: number | null;
+    pokemon_sets?: {
+      tcgplayer_group_id?: number | null;
+    };
   } | null;
 }
 
@@ -20,9 +34,41 @@ export function CardDetailsModal({
   onClose,
   card,
 }: CardDetailsModalProps) {
+  const groupId = card?.pokemon_sets?.tcgplayer_group_id;
+  const cardName = card?.name;
+  const cardNumber = card?.card_number;
+  const cardRarity = card?.rarity;
+
+  // Debug logging
+  console.log('[CardDetailsModal] Card data:', {
+    name: cardName,
+    number: cardNumber,
+    rarity: cardRarity,
+    groupId: groupId,
+    setName: card?.set_name,
+  });
+
+  // Use the new dynamic pricing hook
+  const {
+    data: priceData,
+    isLoading: isLoadingPrice,
+    error,
+  } = useCardPrice(groupId, cardName, cardNumber, cardRarity);
+
   if (!card) return null;
 
   const imageUrl = card.image_large;
+  const product = priceData?.product;
+  const prices = priceData?.prices || [];
+  const productUrl = product?.url;
+
+  // Fallback URL if no direct product URL
+  const fallbackUrl =
+    !productUrl && cardName && cardNumber
+      ? `https://www.tcgplayer.com/search/pokemon-cards?q=${encodeURIComponent(cardName)}+${cardNumber}&productLineName=pokemon-cards`
+      : null;
+
+  const finalUrl = productUrl || fallbackUrl;
 
   return (
     <Modal
@@ -87,6 +133,63 @@ export function CardDetailsModal({
                 artist
               </Text>
               <Text size="sm">{card.artist}</Text>
+            </Group>
+          )}
+
+          {/* Market Prices Section */}
+          <Group justify="space-between" align="flex-start">
+            <Text size="sm" c="dimmed">
+              market prices
+            </Text>
+            <Stack gap={4} style={{ minWidth: 120 }}>
+              {isLoadingPrice ? (
+                <Loader size="xs" />
+              ) : error ? (
+                <Text size="sm" c="red">
+                  Error loading price
+                </Text>
+              ) : prices.length > 0 ? (
+                prices.map((price, index) => (
+                  <Group key={index} justify="space-between" gap="xs">
+                    <Text size="xs" c="dimmed">
+                      {price.subTypeName || 'Standard'}
+                    </Text>
+                    {finalUrl ? (
+                      <Anchor
+                        href={finalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="sm"
+                        style={{
+                          color: '#228be6',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        ${price.marketPrice?.toFixed(2) || 'N/A'}
+                      </Anchor>
+                    ) : (
+                      <Text size="sm">
+                        ${price.marketPrice?.toFixed(2) || 'N/A'}
+                      </Text>
+                    )}
+                  </Group>
+                ))
+              ) : (
+                <Text size="sm">-</Text>
+              )}
+            </Stack>
+          </Group>
+
+          {/* Debug info - remove this in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <Group justify="space-between">
+              <Text size="xs" c="dimmed">
+                debug info
+              </Text>
+              <Text size="xs">
+                Group: {groupId || 'none'} | Prices: {prices.length} variants |
+                URL: {finalUrl ? 'available' : 'none'}
+              </Text>
             </Group>
           )}
         </Stack>

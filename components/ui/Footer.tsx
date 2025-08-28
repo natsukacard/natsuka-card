@@ -1,11 +1,12 @@
 'use client';
-import { ActionIcon, Anchor, Container, Group, Text } from '@mantine/core';
 import {
-  FaDiscord,
-  FaFacebook,
-  FaInstagram,
-  FaXTwitter,
-} from 'react-icons/fa6';
+  faDiscord,
+  faFacebook,
+  faInstagram,
+  faTwitter,
+} from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Anchor, Container, Group, Text } from '@mantine/core';
 import classes from './Footer.module.css';
 
 const links = [
@@ -34,16 +35,16 @@ export function Footer() {
           <Group className={classes.links}>{items}</Group>
           <Group gap={8} justify="flex-end" wrap="nowrap">
             <ActionIcon size="lg" variant="subtle">
-              <FaDiscord size={20} color="white" />
+              <FontAwesomeIcon icon={faDiscord} size="lg" color="white" />
             </ActionIcon>
             <ActionIcon size="lg" variant="subtle">
-              <FaXTwitter size={20} color="white" />
+              <FontAwesomeIcon icon={faTwitter} size="lg" color="white" />
             </ActionIcon>
             <ActionIcon size="lg" variant="subtle">
-              <FaFacebook size={20} color="white" />
+              <FontAwesomeIcon icon={faFacebook} size="lg" color="white" />
             </ActionIcon>
             <ActionIcon size="lg" variant="subtle">
-              <FaInstagram size={20} color="white" />
+              <FontAwesomeIcon icon={faInstagram} size="lg" color="white" />
             </ActionIcon>
           </Group>
         </div>

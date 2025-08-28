@@ -12,7 +12,9 @@ export type Card = {
     pokemon_sets?: {
       name: string;
       id: string;
+      tcgplayer_group_id?: number | null;
     } | null;
+    tcgplayer_product_id?: number | null;
   } | null;
 };
 
@@ -26,6 +28,67 @@ export type Binder = {
   page_columns: number;
   cards: Card[] | null;
 };
+
+// TCGPlayer / TCGCSV
+export interface TCGPlayerProduct {
+  productId: number;
+  name: string;
+  cleanName: string;
+  imageUrl?: string;
+  categoryId?: number;
+  groupId?: number;
+  url?: string;
+  modifiedOn?: string;
+  imageCount?: number;
+  presaleInfo?: {
+    isPresale: boolean;
+    releasedOn: string | null;
+    note: string | null;
+  };
+  extendedData: Array<{
+    name: string;
+    displayName: string;
+    value: string;
+  }>;
+}
+
+export interface TCGPlayerPricing {
+  productId: number;
+  lowPrice: number | null;
+  midPrice: number | null;
+  highPrice: number | null;
+  marketPrice: number | null;
+  directLowPrice: number | null;
+  subTypeName?: string;
+}
+
+export interface TCGPlayerCategory {
+  categoryId: number;
+  name: string;
+  displayName: string;
+  seoCategoryName: string;
+  sealedLabel: string;
+  nonSealedLabel: string;
+  conditionGuideUrl: string;
+  isScannable: boolean;
+  popularity: number;
+}
+
+export interface TCGPlayerGroup {
+  groupId: number;
+  name: string;
+  abbreviation: string;
+  isSupplemental: boolean;
+  publishedOn: string;
+  modifiedOn: string;
+  categoryId: number;
+}
+
+export interface TCGCSVApiResponse<T> {
+  success: boolean;
+  errors: string[];
+  results: T[];
+}
 
 // Component prop interfaces
 export interface BinderGridProps {

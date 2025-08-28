@@ -65,6 +65,11 @@ type CardDetails = {
   card_number?: string;
   rarity?: string;
   artist?: string;
+  set_id?: string;
+  tcgplayer_product_id?: number | null;
+  pokemon_sets?: {
+    tcgplayer_group_id?: number | null;
+  };
 };
 
 interface BinderViewProps {
@@ -367,6 +372,12 @@ export function BinderView({
         card_number: pokemonCard.number || undefined,
         rarity: pokemonCard.rarity || undefined,
         artist: pokemonCard.artist || undefined,
+        tcgplayer_product_id: pokemonCard.tcgplayer_product_id || undefined,
+        pokemon_sets: pokemonCard.pokemon_sets
+          ? {
+              tcgplayer_group_id: pokemonCard.pokemon_sets.tcgplayer_group_id,
+            }
+          : undefined,
       });
       openCardDetails();
     }
