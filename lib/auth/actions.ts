@@ -41,8 +41,7 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
     options: {
       data: {
         username: credentials.username,
-        // The avatar_url can be added here in the future
-        // avatar_url: '...'
+        display_name: credentials.username,
       },
     },
   });

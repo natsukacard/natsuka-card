@@ -1,5 +1,5 @@
 'use client';
-import { signInWithPassword } from '@/lib/auth/actions';
+import { signInWithGoogle, signInWithPassword } from '@/lib/auth/actions';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Anchor,
@@ -54,7 +54,9 @@ export function SignInForm() {
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
         <Group grow mb="md" mt="md">
-          <GoogleButton radius="xl">continue with google</GoogleButton>
+          <GoogleButton radius="xl" onClick={signInWithGoogle}>
+            continue with google
+          </GoogleButton>
         </Group>
 
         <Divider

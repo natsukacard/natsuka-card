@@ -1,6 +1,6 @@
 'use client';
 
-import { signUpWithPassword } from '@/lib/auth/actions';
+import { signInWithGoogle, signUpWithPassword } from '@/lib/auth/actions';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Anchor,
@@ -74,7 +74,10 @@ export function SignUpForm() {
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
         <Group grow mb="md" mt="md">
-          <GoogleButton radius="xl">continue with google</GoogleButton>
+          <GoogleButton radius="xl" onClick={signInWithGoogle}>
+            continue with google
+          </GoogleButton>{' '}
+          {/* Add onClick handler */}
         </Group>
 
         <Divider
@@ -98,6 +101,7 @@ export function SignUpForm() {
               error={errors.email?.message}
             />
             <PasswordStrength
+              label="password"
               radius="md"
               {...register('password')}
               error={errors.password?.message}
