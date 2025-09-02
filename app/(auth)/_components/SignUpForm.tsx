@@ -14,7 +14,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -37,6 +37,7 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isSuccess, setIsSuccess] = useState(false);
   const {
     register,
@@ -57,6 +58,10 @@ export function SignUpForm() {
     mutate(data);
   };
 
+  const handleGoogleSignIn = () => {
+    signInWithGoogle(pathname);
+  };
+
   if (isSuccess) {
     return (
       <Paper withBorder p={30} radius="xl" className="text-center">
@@ -74,7 +79,7 @@ export function SignUpForm() {
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
         <Group grow mb="md" mt="md">
-          <GoogleButton radius="xl" onClick={signInWithGoogle}>
+          <GoogleButton radius="xl" onClick={handleGoogleSignIn}>
             continue with google
           </GoogleButton>{' '}
           {/* Add onClick handler */}
