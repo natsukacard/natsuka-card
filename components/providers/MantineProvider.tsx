@@ -7,9 +7,5 @@ const theme = createTheme({
 });
 
 export function MantineProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <Provider theme={theme} defaultColorScheme="light">
-      {children}
-    </Provider>
-  );
+  return <Provider theme={theme}>{children}</Provider>;
 }

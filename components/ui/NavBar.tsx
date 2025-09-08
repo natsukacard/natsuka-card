@@ -22,11 +22,14 @@ import { useDisclosure } from '@mantine/hooks';
 import { useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export function NavBar() {
   const router = useRouter();
   const { data: user, isLoading } = useUser();
   const searchOpened = useSidebarStore((state) => state.searchOpened);
+  const [mounted, setMounted] = useState(false);
+
   const { mutate: handleSignOut } = useMutation({
     mutationFn: signOut,
     onSuccess: () => {
@@ -43,10 +46,18 @@ export function NavBar() {
 
   // Dynamic colors
   const theme = useMantineTheme();
+
+  // Prevent hydration mismatch by only applying dynamic colors after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const bgColor =
-    computedColorScheme === 'dark' ? theme.colors.dark[7] : theme.white;
+    mounted && computedColorScheme === 'dark'
+      ? theme.colors.dark[7]
+      : theme.white;
   const textColor =
-    computedColorScheme === 'dark'
+    mounted && computedColorScheme === 'dark'
       ? theme.colors.dark[0]
       : theme.colors.gray[8];
 
@@ -128,7 +139,7 @@ export function NavBar() {
               color={textColor}
               aria-label="Toggle color scheme"
             >
-              {computedColorScheme === 'dark' ? (
+              {mounted && computedColorScheme === 'dark' ? (
                 <IconSun stroke={1.5} />
               ) : (
                 <IconMoon stroke={1.5} />
