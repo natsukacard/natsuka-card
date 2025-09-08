@@ -7,58 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 
 const API_BASE_URL = 'https://tcgcsv.com/tcgplayer';
 
-const fetchTcgplayerData = async (groupId: string) => {
-  console.log(`[TCGCSV] Fetching data for groupId: ${groupId}`);
-
-  // Fetch product data from the endpoint.
-  const productsResponse = await fetch(`${API_BASE_URL}/3/${groupId}/products`);
-  if (!productsResponse.ok) {
-    console.error(
-      `[TCGCSV] Failed to fetch products for groupId: ${groupId}`,
-      productsResponse.statusText
-    );
-    throw new Error('Failed to fetch TCGplayer products');
-  }
-
-  // Handle wrapped response format
-  const productsData: TCGCSVApiResponse<TCGPlayerProduct> =
-    await productsResponse.json();
-  if (!productsData.success || !productsData.results) {
-    throw new Error('Invalid products response format');
-  }
-  const products = productsData.results;
-
-  console.log(
-    `[TCGCSV] Fetched ${products.length} products. Sample:`,
-    products.slice(0, 3)
-  );
-
-  // Fetch pricing data from a parallel endpoint.
-  const pricesResponse = await fetch(`${API_BASE_URL}/3/${groupId}/prices`);
-  if (!pricesResponse.ok) {
-    console.error(
-      `[TCGCSV] Failed to fetch prices for groupId: ${groupId}`,
-      pricesResponse.statusText
-    );
-    throw new Error('Failed to fetch TCGplayer prices');
-  }
-
-  // Handle wrapped response format
-  const pricesData: TCGCSVApiResponse<TCGPlayerPricing> =
-    await pricesResponse.json();
-  if (!pricesData.success || !pricesData.results) {
-    throw new Error('Invalid prices response format');
-  }
-  const prices = pricesData.results;
-
-  console.log(
-    `[TCGCSV] Fetched ${prices.length} prices. Sample:`,
-    prices.slice(0, 3)
-  );
-
-  return { products, prices };
-};
-
 export const useCardPrice = (
   groupId: number | null | undefined,
   cardName: string | undefined,

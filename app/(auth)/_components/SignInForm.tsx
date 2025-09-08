@@ -54,7 +54,7 @@ export function SignInForm() {
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
         <Group grow mb="md" mt="md">
-          <GoogleButton radius="xl" onClick={signInWithGoogle}>
+          <GoogleButton radius="xl" onClick={() => signInWithGoogle()}>
             continue with google
           </GoogleButton>
         </Group>
