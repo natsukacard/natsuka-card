@@ -71,14 +71,11 @@ export function CardDetailsModal({
   const finalUrl = productUrl || fallbackUrl;
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={card.name}
-      size="lg"
-      centered
-    >
+    <Modal opened={opened} onClose={onClose} size="lg" centered>
       <Stack>
+        <Modal.Title ta="center" className="lowercase">
+          {card.name}
+        </Modal.Title>
         {imageUrl && (
           <AspectRatio
             ratio={5 / 7}
@@ -137,7 +134,11 @@ export function CardDetailsModal({
           )}
 
           {/* Market Prices Section */}
-          <Group justify="space-between" align="flex-start">
+          <Group
+            justify="space-between"
+            align="flex-start"
+            className="lowercase"
+          >
             <Text size="sm" c="dimmed">
               market prices
             </Text>
@@ -179,19 +180,6 @@ export function CardDetailsModal({
               )}
             </Stack>
           </Group>
-
-          {/* Debug info - remove this in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">
-                debug info
-              </Text>
-              <Text size="xs">
-                Group: {groupId || 'none'} | Prices: {prices.length} variants |
-                URL: {finalUrl ? 'available' : 'none'}
-              </Text>
-            </Group>
-          )}
         </Stack>
       </Stack>
     </Modal>
