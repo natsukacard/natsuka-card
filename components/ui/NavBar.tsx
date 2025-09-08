@@ -2,7 +2,10 @@
 import { signOut } from '@/lib/auth/actions';
 import { useUser } from '@/lib/auth/queries';
 import { useSidebarStore } from '@/stores/sidebarStore';
+import { IconMoon, IconSun } from '@tabler/icons-react';
+
 import {
+  ActionIcon,
   Anchor,
   Burger,
   Button,
@@ -11,6 +14,9 @@ import {
   Group,
   Skeleton,
   Stack,
+  useComputedColorScheme,
+  useMantineColorScheme,
+  useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useMutation } from '@tanstack/react-query';
@@ -29,17 +35,41 @@ export function NavBar() {
   });
   const [opened, { toggle, close }] = useDisclosure(false);
 
+  // Dark mode toggle
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light', {
+    getInitialValueInEffect: true,
+  });
+
+  // Dynamic colors
+  const theme = useMantineTheme();
+  const bgColor =
+    computedColorScheme === 'dark' ? theme.colors.dark[7] : theme.white;
+  const textColor =
+    computedColorScheme === 'dark'
+      ? theme.colors.dark[0]
+      : theme.colors.gray[8];
+
+  const toggleColorScheme = () => {
+    setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
     <header
       className="sticky top-0 z-50 bg-white"
       style={{
+        backgroundColor: bgColor,
         marginRight: searchOpened ? '600px' : '0',
         transition: 'margin-right 200ms ease',
       }}
     >
       <Container size="md">
         <nav className="flex h-16 items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-gray-800">
+          <Link
+            href="/"
+            className="text-xl font-bold"
+            style={{ color: textColor }}
+          >
             natsuka
           </Link>
 
@@ -55,7 +85,7 @@ export function NavBar() {
                   fz="md"
                   fw={500}
                   underline="never"
-                  c="inherit"
+                  c={textColor}
                 >
                   profile
                 </Anchor>
@@ -71,7 +101,7 @@ export function NavBar() {
             ) : (
               <>
                 <Anchor
-                  c="inherit"
+                  c={textColor}
                   component={Link}
                   href="/login"
                   fz="md"
@@ -90,6 +120,20 @@ export function NavBar() {
                 </Button>
               </>
             )}
+            {/* Dark mode toggle */}
+            <ActionIcon
+              onClick={toggleColorScheme}
+              variant="transparent"
+              size="lg"
+              color={textColor}
+              aria-label="Toggle color scheme"
+            >
+              {computedColorScheme === 'dark' ? (
+                <IconSun stroke={1.5} />
+              ) : (
+                <IconMoon stroke={1.5} />
+              )}
+            </ActionIcon>
           </Group>
 
           {/* Mobile hamburger */}
@@ -146,6 +190,7 @@ export function NavBar() {
                 fz="sm"
                 fw={500}
                 onClick={close}
+                c={textColor}
               >
                 login
               </Anchor>

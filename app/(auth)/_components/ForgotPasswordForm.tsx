@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
         </Text>
         <Button
           variant="subtle"
-          color="#8d84b0"
+          color="#6796ec"
           mt="md"
           onClick={() => router.push('/login')}
         >
@@ -90,7 +90,7 @@ export function ForgotPasswordForm() {
             )}
 
             <Button
-              color="#8d84b0"
+              color="#6796ec"
               type="submit"
               loading={isPending}
               radius="xl"

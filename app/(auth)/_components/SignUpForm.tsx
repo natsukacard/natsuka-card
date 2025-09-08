@@ -125,7 +125,7 @@ export function SignUpForm() {
             )}
 
             <Button
-              color="#8d84b0"
+              color="#6796ec"
               type="submit"
               loading={isPending}
               radius="lg"

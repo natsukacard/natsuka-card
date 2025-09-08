@@ -2,6 +2,7 @@ import { MantineProvider } from '@/components/providers/MantineProvider';
 import { Providers } from '@/components/providers/Providers';
 import { Footer } from '@/components/ui/Footer';
 import { NavBar } from '@/components/ui/NavBar';
+import { ColorSchemeScript } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { ContextMenuProvider } from 'mantine-contextmenu';
 import type { Metadata } from 'next';
@@ -30,7 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" data-mantine-color-scheme="light">
+      <head>
+        <ColorSchemeScript defaultColorScheme="light" />
+      </head>
       <body
         className={`${outfit.className} ${geistMono.variable} antialiased h-full flex flex-col`}
       >

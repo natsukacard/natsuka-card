@@ -9,10 +9,12 @@ export type Card = {
     number?: string | null;
     rarity?: string | null;
     artist?: string | null;
+
     pokemon_sets?: {
       name: string;
       id: string;
       tcgplayer_group_id?: number | null;
+      release_date?: string | null;
     } | null;
     tcgplayer_product_id?: number | null;
   } | null;

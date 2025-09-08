@@ -39,7 +39,7 @@ export const getBinderByIdServer = async (binderId: string) => {
         number,
         artist,
         rarity,
-        pokemon_sets(name, id, tcgplayer_group_id)
+        pokemon_sets(name, id, tcgplayer_group_id, release_date)
       )
     `
     )

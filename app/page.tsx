@@ -99,7 +99,7 @@ export default function Page() {
             <Card
               withBorder
               radius="lg"
-              className="transition-colors hover:border-[#8d84b0]/50"
+              className="transition-colors hover:border-[#6796ec]/50"
             >
               <Stack gap="md" p="md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg">
@@ -123,7 +123,7 @@ export default function Page() {
             <Card
               withBorder
               radius="lg"
-              className="transition-colors hover:border-[#8d84b0]/50"
+              className="transition-colors hover:border-[#6796ec]/50"
             >
               <Stack gap="md" p="md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg">
@@ -147,7 +147,7 @@ export default function Page() {
             <Card
               withBorder
               radius="lg"
-              className="transition-colors hover:border-[#8d84b0]/50"
+              className="transition-colors hover:border-[#6796ec]/50"
             >
               <Stack gap="md" p="md">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg">

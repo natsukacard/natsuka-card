@@ -124,7 +124,7 @@ export function CreateBinderModal({ opened, onClose }: CreateBinderModalProps) {
               cancel
             </Button>
             <Button
-              color="#8d84b0"
+              color="#6796ec"
               type="submit"
               radius="xl"
               loading={isPending}

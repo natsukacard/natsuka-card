@@ -1,4 +1,4 @@
-import { useCardPrice } from '@/lib/pricing/queries.client'; // Import the new hook
+import { useCardPrice } from '@/lib/pricing/queries.client';
 import {
   Anchor,
   AspectRatio,
@@ -22,6 +22,7 @@ interface CardDetailsModalProps {
     card_number?: string;
     rarity?: string;
     artist?: string;
+    year?: number | null;
     tcgplayer_product_id?: number | null;
     pokemon_sets?: {
       tcgplayer_group_id?: number | null;
@@ -39,15 +40,6 @@ export function CardDetailsModal({
   const cardNumber = card?.card_number;
   const cardRarity = card?.rarity;
 
-  // Debug logging
-  console.log('[CardDetailsModal] Card data:', {
-    name: cardName,
-    number: cardNumber,
-    rarity: cardRarity,
-    groupId: groupId,
-    setName: card?.set_name,
-  });
-
   // Use the new dynamic pricing hook
   const {
     data: priceData,
@@ -63,19 +55,28 @@ export function CardDetailsModal({
   const productUrl = product?.url;
 
   // Fallback URL if no direct product URL
-  const fallbackUrl =
-    !productUrl && cardName && cardNumber
+  const finalUrl =
+    productUrl ||
+    (cardName && cardNumber
       ? `https://www.tcgplayer.com/search/pokemon-cards?q=${encodeURIComponent(cardName)}+${cardNumber}&productLineName=pokemon-cards`
-      : null;
-
-  const finalUrl = productUrl || fallbackUrl;
+      : null);
 
   return (
-    <Modal opened={opened} onClose={onClose} size="lg" centered>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      size="lg"
+      centered
+      radius="lg"
+      padding="xl"
+      className="lowercase"
+      title={`${card.year ? `${card.year} ` : ''}${card.set_name || ''} - ${card.name} #${card.card_number || ''}`.trim()}
+      styles={{
+        header: { display: 'flex', alignItems: 'center' },
+        title: { flex: 1, textAlign: 'center' },
+      }}
+    >
       <Stack>
-        <Modal.Title ta="center" className="lowercase">
-          {card.name}
-        </Modal.Title>
         {imageUrl && (
           <AspectRatio
             ratio={5 / 7}
@@ -151,7 +152,12 @@ export function CardDetailsModal({
                 </Text>
               ) : prices.length > 0 ? (
                 prices.map((price, index) => (
-                  <Group key={index} justify="space-between" gap="xs">
+                  <Group
+                    key={index}
+                    justify="space-between"
+                    gap="xs"
+                    className="lowercase"
+                  >
                     <Text size="xs" c="dimmed">
                       {price.subTypeName || 'Standard'}
                     </Text>

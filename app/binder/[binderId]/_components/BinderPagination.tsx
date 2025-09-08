@@ -50,7 +50,7 @@ export function BinderPagination({
       {/* Main pagination */}
       <Group justify="center" mt="lg" align="center">
         <Pagination
-          color="#8d84b0"
+          color="#6796ec"
           value={currentPage}
           onChange={handlePageChange}
           total={totalPages}
@@ -83,7 +83,7 @@ export function BinderPagination({
             />
             <Button
               size="xs"
-              color="#8d84b0"
+              color="#6796ec"
               radius="xl"
               variant="light"
               onClick={handleJumpToPage}

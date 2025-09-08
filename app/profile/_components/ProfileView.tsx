@@ -53,7 +53,7 @@ export function ProfileView() {
             </Text>
           </div>
           <Button
-            color="#8d84b0"
+            color="#6796ec"
             leftSection={<IconPlus size={16} />}
             fullWidth
             radius="xl"

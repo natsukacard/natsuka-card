@@ -61,7 +61,7 @@ export function ResetPasswordForm() {
           your password has been successfully updated.
         </Text>
         <Button
-          color="#8d84b0"
+          color="#6796ec"
           onClick={() => router.push('/profile')}
           radius="lg"
           fullWidth
@@ -120,7 +120,7 @@ export function ResetPasswordForm() {
             )}
 
             <Button
-              color="#8d84b0"
+              color="#6796ec"
               type="submit"
               loading={isPending}
               radius="lg"

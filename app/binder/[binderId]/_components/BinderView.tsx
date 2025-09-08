@@ -53,6 +53,7 @@ type SearchResult = {
   rarity: string;
   match_type: string;
   artist: string;
+  year?: number;
 };
 
 // Add CardDetails type for the modal
@@ -66,6 +67,7 @@ type CardDetails = {
   rarity?: string;
   artist?: string;
   set_id?: string;
+  year?: number | null;
   tcgplayer_product_id?: number | null;
   pokemon_sets?: {
     tcgplayer_group_id?: number | null;
@@ -363,6 +365,10 @@ export function BinderView({
   const handleCardClick = (card: Card) => {
     if (card.pokemon_cards) {
       const pokemonCard = card.pokemon_cards;
+      const releaseDate = pokemonCard.pokemon_sets?.release_date;
+      const year = releaseDate
+        ? new Date(releaseDate).getFullYear()
+        : undefined; // Extract year
       setSelectedCard({
         id: card.id,
         name: pokemonCard.name,
@@ -372,6 +378,7 @@ export function BinderView({
         card_number: pokemonCard.number || undefined,
         rarity: pokemonCard.rarity || undefined,
         artist: pokemonCard.artist || undefined,
+        year, // Use computed year
         tcgplayer_product_id: pokemonCard.tcgplayer_product_id || undefined,
         pokemon_sets: pokemonCard.pokemon_sets
           ? {
@@ -393,6 +400,7 @@ export function BinderView({
       card_number: card.card_number,
       rarity: card.rarity,
       artist: card.artist,
+      year: card.year || undefined,
     });
     openCardDetails();
   };

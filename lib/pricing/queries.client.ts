@@ -7,6 +7,66 @@ import { useQuery } from '@tanstack/react-query';
 
 const API_BASE_URL = 'https://tcgcsv.com/tcgplayer';
 
+// Helper function to find best product match (extracted for clarity)
+const findBestProductMatch = (
+  products: TCGPlayerProduct[],
+  cardName: string,
+  cardNumber: string,
+  cardRarity?: string
+): { match: TCGPlayerProduct | null; score: number } => {
+  // Pre-normalize search criteria once
+  const normalizedCardName = cardName.toLowerCase().trim();
+  const normalizedCardNumber = cardNumber.replace(/^0+/, '');
+
+  let bestMatch: TCGPlayerProduct | null = null;
+  let bestScore = 0;
+
+  for (const product of products) {
+    let score = 0;
+
+    // Number matching logic (optimized)
+    const numberData = product.extendedData?.find(
+      (data) => data.name === 'Number'
+    );
+    const productNumber = numberData?.value.split('/')[0];
+
+    if (productNumber) {
+      const normalizedProductNumber = productNumber.replace(/^0+/, '');
+
+      if (productNumber === cardNumber) {
+        score += 100; // Exact match
+      } else if (normalizedProductNumber === normalizedCardNumber) {
+        score += 100; // Normalized match
+      } else if (productNumber === cardNumber.padStart(3, '0')) {
+        score += 100; // Padded match
+      }
+    }
+
+    // Name similarity
+    const normalizedProductName = product.cleanName?.toLowerCase().trim() || '';
+    if (normalizedProductName.includes(normalizedCardName)) {
+      score += 50;
+    }
+
+    // Rarity matching
+    if (cardRarity) {
+      const rarityData = product.extendedData?.find(
+        (data) => data.name === 'Rarity'
+      );
+      if (rarityData?.value.toLowerCase() === cardRarity.toLowerCase()) {
+        score += 30;
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = product;
+    }
+  }
+
+  return { match: bestMatch, score: bestScore };
+};
+
 export const useCardPrice = (
   groupId: number | null | undefined,
   cardName: string | undefined,
@@ -24,211 +84,92 @@ export const useCardPrice = (
     queryFn: async () => {
       if (!groupId || !cardName || !cardNumber) return null;
 
-      console.log(
-        `[useCardPrice] Looking for card: ${cardName} #${cardNumber} (${cardRarity}) in group ${groupId}`
-      );
-
       try {
-        // Step 1: Fetch all products for this group
-        const productsResponse = await fetch(
-          `${API_BASE_URL}/3/${groupId}/products`
-        );
+        // Parallel API calls for better performance
+        const [productsResponse, pricesResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/3/${groupId}/products`),
+          fetch(`${API_BASE_URL}/3/${groupId}/prices`),
+        ]);
 
-        if (!productsResponse.ok) {
-          console.error(
-            `[useCardPrice] Products API failed: ${productsResponse.status}`
-          );
+        if (!productsResponse.ok || !pricesResponse.ok) {
           return null;
         }
 
-        const productsData: TCGCSVApiResponse<TCGPlayerProduct> =
-          await productsResponse.json();
+        const [productsData, pricesData] = await Promise.all([
+          productsResponse.json() as Promise<
+            TCGCSVApiResponse<TCGPlayerProduct>
+          >,
+          pricesResponse.json() as Promise<TCGCSVApiResponse<TCGPlayerPricing>>,
+        ]);
 
-        if (!productsData.success || !productsData.results) {
-          console.error(
-            '[useCardPrice] Invalid products response:',
-            productsData
-          );
+        if (
+          !productsData.success ||
+          !pricesData.success ||
+          !productsData.results ||
+          !pricesData.results
+        ) {
           return null;
         }
 
         const products = productsData.results;
-        console.log(
-          `[useCardPrice] Found ${products.length} products in group ${groupId}`
-        );
-
-        // Step 2: Find the BEST matching product
-        let bestMatch: TCGPlayerProduct | null = null;
-        let bestScore = 0;
-
-        for (const product of products) {
-          let score = 0;
-
-          // Exact number match (highest priority) - handle leading zeros
-          const numberData = product.extendedData?.find(
-            (data) => data.name === 'Number'
-          );
-          const productNumber = numberData?.value.split('/')[0];
-
-          // Normalize both numbers by removing leading zeros for comparison
-          const normalizedCardNumber = cardNumber.replace(/^0+/, ''); // "049" -> "49"
-          const normalizedProductNumber =
-            productNumber?.replace(/^0+/, '') || ''; // "049" -> "49"
-
-          console.log(
-            `[useCardPrice] Comparing: "${cardNumber}" vs "${productNumber}" (normalized: "${normalizedCardNumber}" vs "${normalizedProductNumber}")`
-          );
-
-          // Try multiple matching strategies
-          if (productNumber === cardNumber) {
-            score += 100; // Exact match (e.g., "049" === "049")
-            console.log(
-              `[useCardPrice] Exact number match for ${product.cleanName}`
-            );
-          } else if (normalizedProductNumber === normalizedCardNumber) {
-            score += 100; // Normalized match (e.g., "049" normalized === "49" normalized)
-            console.log(
-              `[useCardPrice] Normalized number match for ${product.cleanName}`
-            );
-          } else if (productNumber === cardNumber.padStart(3, '0')) {
-            score += 100; // Padded match (e.g., "049" === "49".padStart(3, '0'))
-            console.log(
-              `[useCardPrice] Padded number match for ${product.cleanName}`
-            );
-          }
-
-          // Name similarity
-          const normalizedCardName = cardName.toLowerCase().trim();
-          const normalizedProductName =
-            product.cleanName?.toLowerCase().trim() || '';
-          if (normalizedProductName.includes(normalizedCardName)) {
-            score += 50;
-            console.log(`[useCardPrice] Name match for ${product.cleanName}`);
-          }
-
-          // Rarity matching (if available)
-          if (cardRarity) {
-            const rarityData = product.extendedData?.find(
-              (data) => data.name === 'Rarity'
-            );
-            if (rarityData) {
-              const productRarity = rarityData.value.toLowerCase();
-              const searchRarity = cardRarity.toLowerCase();
-
-              if (productRarity === searchRarity) {
-                score += 30;
-                console.log(
-                  `[useCardPrice] Rarity match for ${product.cleanName}`
-                );
-              }
-            }
-          }
-
-          // Update best match
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = product;
-            console.log(
-              `[useCardPrice] New best match: ${product.cleanName} (Score: ${score})`
-            );
-          }
-        }
-
-        if (!bestMatch) {
-          console.warn(
-            `[useCardPrice] No matching product found for ${cardName} #${cardNumber} (${cardRarity})`
-          );
-
-          // Show all products with similar numbers for debugging
-          const similarNumberProducts = products.filter((p) => {
-            const numberData = p.extendedData?.find((d) => d.name === 'Number');
-            const productNumber = numberData?.value.split('/')[0];
-            const normalizedProductNumber =
-              productNumber?.replace(/^0+/, '') || '';
-            const normalizedCardNumber = cardNumber.replace(/^0+/, '');
-            return normalizedProductNumber === normalizedCardNumber;
-          });
-
-          console.log(
-            '[useCardPrice] Products with similar numbers:',
-            similarNumberProducts.map((p) => {
-              const number = p.extendedData?.find(
-                (d) => d.name === 'Number'
-              )?.value;
-              const rarity = p.extendedData?.find(
-                (d) => d.name === 'Rarity'
-              )?.value;
-              return `${p.cleanName}: #${number} (${rarity})`;
-            })
-          );
-
-          return null;
-        }
-
-        console.log(
-          `[useCardPrice] Best match: ${bestMatch.name} (ID: ${bestMatch.productId}, Score: ${bestScore})`
-        );
-
-        // Step 3: Fetch pricing for this specific product
-        const pricesResponse = await fetch(
-          `${API_BASE_URL}/3/${groupId}/prices`
-        );
-
-        if (!pricesResponse.ok) {
-          console.error(
-            `[useCardPrice] Prices API failed: ${pricesResponse.status}`
-          );
-          return null;
-        }
-
-        const pricesData: TCGCSVApiResponse<TCGPlayerPricing> =
-          await pricesResponse.json();
-
-        if (!pricesData.success || !pricesData.results) {
-          console.error('[useCardPrice] Invalid prices response:', pricesData);
-          return null;
-        }
-
         const prices = pricesData.results;
 
-        // Get all price variants for this product
+        // Find best match using optimized function
+        const { match: bestMatch, score } = findBestProductMatch(
+          products,
+          cardName,
+          cardNumber,
+          cardRarity
+        );
+
+        if (!bestMatch || score === 0) {
+          // Only log in development mode
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              `[useCardPrice] No match found for ${cardName} #${cardNumber}`
+            );
+          }
+          return null;
+        }
+
+        // Filter prices for the matched product
         const productPrices = prices.filter(
-          (price) => price.productId === bestMatch!.productId
+          (price) => price.productId === bestMatch.productId
         );
 
         if (productPrices.length === 0) {
-          console.warn(
-            `[useCardPrice] Price not found for product ID: ${bestMatch!.productId}`
-          );
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              `[useCardPrice] No prices found for product ${bestMatch.productId}`
+            );
+          }
           return null;
         }
 
-        console.log(
-          `[useCardPrice] Found ${productPrices.length} price variants for ${cardName} (${bestMatch!.name})`
-        );
-
-        // Return all price variants
         return {
-          product: bestMatch!,
+          product: bestMatch,
           prices: productPrices,
         };
       } catch (error) {
-        console.error('[useCardPrice] Error:', error);
+        // Only log errors in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[useCardPrice] Error:', error);
+        }
         return null;
       }
     },
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
     enabled: !!groupId && !!cardName && !!cardNumber,
   });
 };
 
+// Clean up the other hooks too
 export const useCardPrices = (tcgplayerProductId: number | undefined) => {
   return useQuery({
     queryKey: ['tcgplayer-product-price', tcgplayerProductId],
     queryFn: async () => {
-      console.log(
-        `[useCardPrices] Query started for productId: ${tcgplayerProductId}`
-      );
       if (!tcgplayerProductId) return null;
       throw new Error('Need group ID to fetch prices efficiently');
     },
@@ -248,7 +189,6 @@ export const useCardPricesWithGroup = (groupId: number | null | undefined) => {
         throw new Error('Failed to fetch TCGplayer group prices');
       }
 
-      // Handle wrapped response format
       const pricesData: TCGCSVApiResponse<TCGPlayerPricing> =
         await response.json();
       if (!pricesData.success || !pricesData.results) {
@@ -256,10 +196,7 @@ export const useCardPricesWithGroup = (groupId: number | null | undefined) => {
       }
 
       const prices = pricesData.results;
-      if (prices.length > 0) {
-        return prices[0].marketPrice;
-      }
-      return null;
+      return prices.length > 0 ? prices[0].marketPrice : null;
     },
     staleTime: 24 * 60 * 60 * 1000,
     enabled: !!groupId,

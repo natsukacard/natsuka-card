@@ -162,7 +162,7 @@ export default function ContactPage() {
 
           <Button
             type="submit"
-            color="#8d84b0"
+            color="#6796ec"
             fullWidth
             mt="xl"
             loading={mutation.isPending}
