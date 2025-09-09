@@ -24,10 +24,17 @@ export type Binder = {
   id: string;
   name: string;
   type: string;
+  description?: string | null;
   cover_image_url?: string | null;
-  is_private: boolean;
+  created_at: string;
   page_rows: number;
   page_columns: number;
+  total_pages: number;
+  type_name?: string | null;
+  show_owned?: boolean | null;
+  is_private: boolean;
+  order: number;
+  user_id: string;
   cards: Card[] | null;
 };
 

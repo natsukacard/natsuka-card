@@ -13,6 +13,7 @@ import {
 import { useState } from 'react';
 
 import { BinderCard } from '@/components/binders/BinderCard';
+import { Binder } from '@/lib/types';
 
 // Droppable wrapper for each position
 function DroppableBinderSlot({
@@ -43,7 +44,7 @@ function DraggableBinderItem({
   index,
   children,
 }: {
-  binder: any;
+  binder: Binder;
   index: number;
   children: React.ReactNode;
 }) {
@@ -84,10 +85,10 @@ export function BindersList({
   binders,
   onReorder,
 }: {
-  binders: any[];
+  binders: Binder[];
   onReorder: (binderId: string, newIndex: number) => void;
 }) {
-  const [activeBinder, setActiveBinder] = useState<any>(null);
+  const [activeBinder, setActiveBinder] = useState<Binder | null>(null);
 
   // DnD sensors
   const sensors = useSensors(

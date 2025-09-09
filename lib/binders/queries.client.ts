@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import type { Binder, QueryResult } from '@/lib/types';
+import { Binder, QueryResult } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Binder types
@@ -119,9 +119,11 @@ const getBinders = async ({ binderType }: { binderType?: string } = {}) => {
     query = query.eq('type', binderType);
   }
 
-  const { data: bindersData, error } = await query.order('order', {
-    ascending: true,
-  });
+  const { data: bindersData, error } = await query
+    .order('order', {
+      ascending: true,
+    })
+    .returns<Binder[]>();
 
   if (error) throw new Error(error.message);
   return bindersData;
@@ -328,56 +330,53 @@ export function useUpdateBinderOrder() {
     }) => {
       const response = await fetch(`/api/binders/${binderId}/reorder`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newIndex }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to reorder binder');
       }
-
       return response.json();
     },
     onMutate: async ({ binderId, newIndex }) => {
-      // Cancel outgoing refetchs
       await queryClient.cancelQueries({ queryKey: ['binders'] });
 
-      // Snapshot the previous value
-      const previousBinders = queryClient.getQueryData(['binders']);
+      const previousBinders = queryClient.getQueryData(['binders']) as Binder[];
 
-      // Optimistically insert binder at newIndex
-      queryClient.setQueryData(['binders'], (old: any[]) => {
+      // More efficient reordering - only update what's necessary
+      queryClient.setQueryData(['binders'], (old: Binder[]) => {
         if (!old) return old;
 
-        const binderIndex = old.findIndex((b) => b.id === binderId);
-        if (binderIndex === -1) return old;
+        const currentIndex = old.findIndex((b) => b.id === binderId);
+        if (currentIndex === -1 || currentIndex === newIndex) return old;
 
-        const updatedBinders = [...old];
-        const [movedBinder] = updatedBinders.splice(binderIndex, 1);
-        updatedBinders.splice(newIndex, 0, movedBinder);
+        const result = [...old];
+        const [movedBinder] = result.splice(currentIndex, 1);
+        result.splice(newIndex, 0, movedBinder);
 
-        // Update order values for all binders and sort by order
-        return updatedBinders
-          .map((binder, index) => ({
-            ...binder,
-            order: index,
-          }))
-          .sort((a, b) => a.order - b.order);
+        // Only update order for affected items
+        const startIndex = Math.min(currentIndex, newIndex);
+        const endIndex = Math.max(currentIndex, newIndex);
+
+        return result.map((binder, index) => {
+          if (index >= startIndex && index <= endIndex) {
+            return { ...binder, order: index };
+          }
+          return binder;
+        });
       });
 
       return { previousBinders };
     },
     onError: (err, variables, context) => {
-      // Rollback on error
       if (context?.previousBinders) {
         queryClient.setQueryData(['binders'], context.previousBinders);
       }
     },
-    onSuccess: () => {
-      // Invalidate binders query to refetch
-      queryClient.invalidateQueries({ queryKey: ['binders'] });
+    onSettled: () => {
+      // Consider using refetch instead of invalidate for better UX
+      queryClient.refetchQueries({ queryKey: ['binders'] });
     },
   });
 }
