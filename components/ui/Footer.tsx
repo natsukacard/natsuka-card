@@ -34,16 +34,36 @@ export function Footer() {
 
           <Group className={classes.links}>{items}</Group>
           <Group gap={8} justify="flex-end" wrap="nowrap">
-            <ActionIcon size="lg" variant="subtle">
+            <ActionIcon
+              size="lg"
+              variant="subtle"
+              component="a"
+              href="https://discord.gg/xstCamFK"
+            >
               <FontAwesomeIcon icon={faDiscord} size="lg" color="white" />
             </ActionIcon>
-            <ActionIcon size="lg" variant="subtle">
+            <ActionIcon
+              component="a"
+              size="lg"
+              variant="subtle"
+              href="https://x.com/natsukacard"
+            >
               <FontAwesomeIcon icon={faTwitter} size="lg" color="white" />
             </ActionIcon>
-            <ActionIcon size="lg" variant="subtle">
+            <ActionIcon
+              component="a"
+              size="lg"
+              variant="subtle"
+              href="https://www.facebook.com/profile.php?id=61578196554145"
+            >
               <FontAwesomeIcon icon={faFacebook} size="lg" color="white" />
             </ActionIcon>
-            <ActionIcon size="lg" variant="subtle">
+            <ActionIcon
+              component="a"
+              size="lg"
+              variant="subtle"
+              href="https://www.instagram.com/natsukacard/"
+            >
               <FontAwesomeIcon icon={faInstagram} size="lg" color="white" />
             </ActionIcon>
           </Group>

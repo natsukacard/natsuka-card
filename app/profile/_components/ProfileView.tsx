@@ -1,7 +1,6 @@
 'use client';
-import { BinderCard } from '@/components/binders/BinderCard';
 import { CreateBinderModal } from '@/components/binders/CreateBinderModal';
-import { useBinders } from '@/lib/binders/queries.client';
+import { useBinders, useUpdateBinderOrder } from '@/lib/binders/queries.client';
 import {
   Button,
   Container,
@@ -13,10 +12,16 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus } from '@tabler/icons-react';
+import { BindersList } from './BinderList';
 
 export function ProfileView() {
   const { data: binders, isLoading, error } = useBinders();
   const [opened, { open, close }] = useDisclosure(false);
+  const { mutate: reorderBinder } = useUpdateBinderOrder();
+
+  const handleBinderReorder = (binderId: string, newIndex: number) => {
+    reorderBinder({ binderId, newIndex });
+  };
 
   if (isLoading) {
     return (
@@ -66,15 +71,7 @@ export function ProfileView() {
         </Group>
 
         {binders && binders.length > 0 ? (
-          <SimpleGrid
-            cols={{ base: 1, sm: 2, md: 3 }}
-            spacing="xs"
-            verticalSpacing="xl"
-          >
-            {binders.map((binder) => (
-              <BinderCard key={binder.id} binder={binder} />
-            ))}
-          </SimpleGrid>
+          <BindersList binders={binders} onReorder={handleBinderReorder} />
         ) : (
           <Text>no binders yet. create one to get started!</Text>
         )}

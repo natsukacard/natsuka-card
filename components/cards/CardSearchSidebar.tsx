@@ -137,7 +137,6 @@ function SearchResultCard({
 export function CardSearchSidebar({
   opened,
   onClose,
-
   onCardClick,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -182,10 +181,10 @@ export function CardSearchSidebar({
     results.forEach((card) => {
       if (
         card.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) &&
-        !uniqueItems.has(card.name)
+        !uniqueItems.has(card.name.toLowerCase())
       ) {
-        uniqueItems.add(card.name);
-        allSuggestions.push(card.name);
+        uniqueItems.add(card.name.toLowerCase());
+        allSuggestions.push(card.name.toLowerCase());
       }
     });
 
@@ -195,10 +194,10 @@ export function CardSearchSidebar({
         card.set_name
           .toLowerCase()
           .includes(debouncedSearchTerm.toLowerCase()) &&
-        !uniqueItems.has(card.set_name)
+        !uniqueItems.has(card.set_name.toLowerCase())
       ) {
-        uniqueItems.add(card.set_name);
-        allSuggestions.push(card.set_name);
+        uniqueItems.add(card.set_name.toLowerCase());
+        allSuggestions.push(card.set_name.toLowerCase());
       }
     });
 
@@ -284,6 +283,11 @@ export function CardSearchSidebar({
           rightSection={isLoading ? <Loader size="1rem" /> : null}
           limit={10}
           maxDropdownHeight={200}
+          styles={{
+            option: {
+              textTransform: 'lowercase',
+            },
+          }}
         />
 
         {/* Filter Controls */}
@@ -310,56 +314,71 @@ export function CardSearchSidebar({
         </Group>
 
         <Collapse in={filtersOpened}>
-          <div className="space-y-3 p-3 bg-gray-50 rounded-md">
-            <Group grow>
-              <Select
-                label="sort by"
-                placeholder="relevance"
-                value={filters.sortBy}
-                onChange={(value) =>
-                  handleFilterChange('sortBy', value as SortOption)
-                }
-                data={sortOptions}
-                size="xs"
-              />
-              <Select
-                label="order"
-                placeholder="descending"
-                value={filters.sortDirection}
-                onChange={(value) =>
-                  handleFilterChange('sortDirection', value as SortDirection)
-                }
-                data={[
-                  { value: 'desc', label: 'Descending' },
-                  { value: 'asc', label: 'Ascending' },
-                ]}
-                size="xs"
-              />
-            </Group>
+          <Paper p="md" radius="md" withBorder>
+            <div className="space-y-3">
+              <Group grow>
+                <Select
+                  label="sort by"
+                  placeholder="relevance"
+                  value={filters.sortBy}
+                  onChange={(value) =>
+                    handleFilterChange('sortBy', value as SortOption)
+                  }
+                  data={sortOptions}
+                  size="xs"
+                  styles={{
+                    option: {
+                      textTransform: 'lowercase',
+                    },
+                    input: {
+                      textTransform: 'lowercase',
+                    },
+                  }}
+                />
+                <Select
+                  label="order"
+                  placeholder="descending"
+                  value={filters.sortDirection}
+                  onChange={(value) =>
+                    handleFilterChange('sortDirection', value as SortDirection)
+                  }
+                  data={[
+                    { value: 'desc', label: 'descending' },
+                    { value: 'asc', label: 'ascending' },
+                  ]}
+                  size="xs"
+                  className="lowercase"
+                />
+              </Group>
 
-            <Group grow>
-              <Select
-                label="set"
-                placeholder="all sets"
-                value={filters.setFilter}
-                onChange={(value) => handleFilterChange('setFilter', value)}
-                data={uniqueSets}
-                searchable
-                clearable
-                size="xs"
-              />
-              <Select
-                label="rarity"
-                placeholder="all rarities"
-                value={filters.rarityFilter}
-                onChange={(value) => handleFilterChange('rarityFilter', value)}
-                data={uniqueRarities}
-                searchable
-                clearable
-                size="xs"
-              />
-            </Group>
-          </div>
+              <Group grow>
+                <Select
+                  label="set"
+                  placeholder="all sets"
+                  value={filters.setFilter}
+                  onChange={(value) => handleFilterChange('setFilter', value)}
+                  data={uniqueSets}
+                  searchable
+                  clearable
+                  size="xs"
+                  className="lowercase"
+                />
+                <Select
+                  label="rarity"
+                  placeholder="all rarities"
+                  value={filters.rarityFilter}
+                  onChange={(value) =>
+                    handleFilterChange('rarityFilter', value)
+                  }
+                  data={uniqueRarities}
+                  searchable
+                  clearable
+                  size="xs"
+                  className="lowercase"
+                />
+              </Group>
+            </div>
+          </Paper>
         </Collapse>
 
         {debouncedSearchTerm && (

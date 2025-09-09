@@ -1,0 +1,166 @@
+'use client';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import { useState } from 'react';
+
+import { BinderCard } from '@/components/binders/BinderCard';
+
+// Droppable wrapper for each position
+function DroppableBinderSlot({
+  index,
+  children,
+}: {
+  index: number;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef } = useDroppable({
+    id: `droppable-${index}`,
+    data: {
+      type: 'droppable',
+      index: index,
+    },
+  });
+
+  return (
+    <div ref={setNodeRef} className="min-h-[200px]">
+      {children}
+    </div>
+  );
+}
+
+// Draggable Binder Item Component
+function DraggableBinderItem({
+  binder,
+  index,
+  children,
+}: {
+  binder: any;
+  index: number;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: `binder-${binder.id}`,
+      data: {
+        type: 'binder',
+        binder: binder,
+        index: index,
+      },
+    });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: 1000,
+      }
+    : {};
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={style}
+      className={`transition-all duration-200 ${
+        isDragging ? 'opacity-50' : ''
+      } cursor-grab active:cursor-grabbing`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Main Binders List Component
+export function BindersList({
+  binders,
+  onReorder,
+}: {
+  binders: any[];
+  onReorder: (binderId: string, newIndex: number) => void;
+}) {
+  const [activeBinder, setActiveBinder] = useState<any>(null);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // DnD handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+
+    if (active.data.current?.type === 'binder') {
+      setActiveBinder(active.data.current.binder);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setActiveBinder(null);
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeData = active.data.current;
+    if (!activeData) return;
+
+    const activeIndex = activeData.index;
+    let overIndex: number;
+
+    // Only handle dropping on droppable zones
+    if (over.data.current?.type === 'droppable') {
+      overIndex = over.data.current.index;
+    } else {
+      return;
+    }
+
+    if (
+      activeIndex !== undefined &&
+      overIndex !== undefined &&
+      activeIndex !== overIndex
+    ) {
+      onReorder(activeData.binder.id, overIndex);
+    }
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {binders.map((binder, index) => (
+          <DroppableBinderSlot key={`slot-${index}`} index={index}>
+            <DraggableBinderItem binder={binder} index={index}>
+              <BinderCard binder={binder} />
+            </DraggableBinderItem>
+          </DroppableBinderSlot>
+        ))}
+      </div>
+
+      <DragOverlay>
+        {activeBinder ? (
+          <div className="opacity-80 rotate-3 shadow-lg">
+            <BinderCard binder={activeBinder} />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
