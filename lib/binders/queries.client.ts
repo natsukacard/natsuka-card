@@ -320,63 +320,68 @@ export const useUpdateBinder = () => {
 
 export function useUpdateBinderOrder() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
-      binderId,
-      newIndex,
+      binders,
     }: {
-      binderId: string;
-      newIndex: number;
+      binders: { id: string; order: number }[];
     }) => {
-      const response = await fetch(`/api/binders/${binderId}/reorder`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newIndex }),
-      });
+      if (!binders.length) return { binders };
+      const supabase = createClient();
 
-      if (!response.ok) {
-        throw new Error('Failed to reorder binder');
-      }
-      return response.json();
+      const results = await Promise.all(
+        binders.map((b) =>
+          supabase
+            .from('binders')
+            .update({ order: b.order })
+            .eq('id', b.id)
+            .select('id')
+            .single()
+        )
+      );
+
+      const firstError = results.find(
+        (r: QueryResult<unknown>) => r.error
+      )?.error;
+      if (firstError) throw new Error(firstError.message);
+
+      return { binders };
     },
-    onMutate: async ({ binderId, newIndex }) => {
+    onMutate: async ({ binders: updatedBinders }) => {
+      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['binders'] });
 
-      const previousBinders = queryClient.getQueryData(['binders']) as Binder[];
+      // Snapshot the previous value
+      const previousBinders = queryClient.getQueryData(['binders']);
 
-      // More efficient reordering - only update what's necessary
-      queryClient.setQueryData(['binders'], (old: Binder[]) => {
+      // Optimistically update binder positions (same as cards)
+      queryClient.setQueryData(['binders'], (old: Binder[] | undefined) => {
         if (!old) return old;
 
-        const currentIndex = old.findIndex((b) => b.id === binderId);
-        if (currentIndex === -1 || currentIndex === newIndex) return old;
+        const updatedBindersMap = new Map(
+          updatedBinders.map((b) => [b.id, b.order])
+        );
 
-        const result = [...old];
-        const [movedBinder] = result.splice(currentIndex, 1);
-        result.splice(newIndex, 0, movedBinder);
-
-        // Only update order for affected items
-        const startIndex = Math.min(currentIndex, newIndex);
-        const endIndex = Math.max(currentIndex, newIndex);
-
-        return result.map((binder, index) => {
-          if (index >= startIndex && index <= endIndex) {
-            return { ...binder, order: index };
-          }
-          return binder;
-        });
+        return old
+          .map((binder) => ({
+            ...binder,
+            order: updatedBindersMap.get(binder.id) ?? binder.order,
+          }))
+          .sort((a, b) => a.order - b.order);
       });
 
       return { previousBinders };
     },
     onError: (err, variables, context) => {
+      // Rollback on error
       if (context?.previousBinders) {
         queryClient.setQueryData(['binders'], context.previousBinders);
       }
     },
     onSettled: () => {
-      // Consider using refetch instead of invalidate for better UX
-      queryClient.refetchQueries({ queryKey: ['binders'] });
+      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['binders'] });
     },
   });
 }

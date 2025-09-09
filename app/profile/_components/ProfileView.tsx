@@ -17,10 +17,13 @@ import { BindersList } from './BinderList';
 export function ProfileView() {
   const { data: binders, isLoading, error } = useBinders();
   const [opened, { open, close }] = useDisclosure(false);
-  const { mutate: reorderBinder } = useUpdateBinderOrder();
+  const { mutate: reorderBinders, isPending: isReordering } =
+    useUpdateBinderOrder();
 
-  const handleBinderReorder = (binderId: string, newIndex: number) => {
-    reorderBinder({ binderId, newIndex });
+  const handleBinderReorder = (
+    updatedBinders: { id: string; order: number }[]
+  ) => {
+    reorderBinders({ binders: updatedBinders });
   };
 
   if (isLoading) {

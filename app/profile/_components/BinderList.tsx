@@ -86,11 +86,11 @@ export function BindersList({
   onReorder,
 }: {
   binders: Binder[];
-  onReorder: (binderId: string, newIndex: number) => void;
+  onReorder: (updatedBinders: { id: string; order: number }[]) => void;
 }) {
   const [activeBinder, setActiveBinder] = useState<Binder | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -99,9 +99,9 @@ export function BindersList({
     })
   );
 
-  // DnD handlers
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    setIsDragging(true);
 
     if (active.data.current?.type === 'binder') {
       setActiveBinder(active.data.current.binder);
@@ -112,6 +112,7 @@ export function BindersList({
     const { active, over } = event;
 
     setActiveBinder(null);
+    setIsDragging(false);
 
     if (!over || active.id === over.id) {
       return;
@@ -123,7 +124,6 @@ export function BindersList({
     const activeIndex = activeData.index;
     let overIndex: number;
 
-    // Only handle dropping on droppable zones
     if (over.data.current?.type === 'droppable') {
       overIndex = over.data.current.index;
     } else {
@@ -135,7 +135,18 @@ export function BindersList({
       overIndex !== undefined &&
       activeIndex !== overIndex
     ) {
-      onReorder(activeData.binder.id, overIndex);
+      // Simple swap approach like cards - much faster!
+      const updatedBinders = binders.map((binder, index) => {
+        if (index === activeIndex) {
+          return { id: binder.id, order: overIndex };
+        }
+        if (index === overIndex) {
+          return { id: binder.id, order: activeIndex };
+        }
+        return { id: binder.id, order: index };
+      });
+
+      onReorder(updatedBinders);
     }
   };
 
