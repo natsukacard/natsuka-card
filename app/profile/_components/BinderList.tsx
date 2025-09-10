@@ -19,9 +19,11 @@ import { Binder } from '@/lib/types';
 function DroppableBinderSlot({
   index,
   children,
+  isOwner,
 }: {
   index: number;
   children: React.ReactNode;
+  isOwner: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `droppable-${index}`,
@@ -35,7 +37,7 @@ function DroppableBinderSlot({
     <div
       ref={setNodeRef}
       className={`min-h-[200px] transition-all duration-200 ${
-        isOver
+        isOver && isOwner
           ? 'bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg'
           : ''
       }`}
@@ -50,10 +52,12 @@ function DraggableBinderItem({
   binder,
   index,
   children,
+  isOwner,
 }: {
   binder: Binder;
   index: number;
   children: React.ReactNode;
+  isOwner: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -63,6 +67,7 @@ function DraggableBinderItem({
         binder: binder,
         index: index,
       },
+      disabled: !isOwner, // Disable dragging for non-owners
     });
 
   const style = transform
@@ -76,13 +81,14 @@ function DraggableBinderItem({
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
+      {...(isOwner ? { ...listeners, ...attributes } : {})} // Only add listeners for owners
       style={style}
       className={`transition-all duration-200 ${
-        isDragging
+        isDragging && isOwner
           ? 'opacity-30 scale-105 shadow-xl rotate-2'
-          : 'opacity-100 hover:shadow-md cursor-grab active:cursor-grabbing'
+          : isOwner
+            ? 'opacity-100 hover:shadow-md cursor-grab active:cursor-grabbing'
+            : 'opacity-100' // No hover effects for non-owners
       }`}
     >
       {children}
@@ -94,9 +100,11 @@ function DraggableBinderItem({
 export function BindersList({
   binders,
   onReorder,
+  isOwner = true, // Default to true for backward compatibility
 }: {
   binders: Binder[];
-  onReorder: (updatedBinders: { id: string; order: number }[]) => void;
+  onReorder?: (updatedBinders: { id: string; order: number }[]) => void;
+  isOwner?: boolean;
 }) {
   const [activeBinder, setActiveBinder] = useState<Binder | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -110,6 +118,8 @@ export function BindersList({
   );
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (!isOwner) return; // Prevent drag start for non-owners
+
     const { active } = event;
     setIsDragging(true);
 
@@ -119,14 +129,14 @@ export function BindersList({
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!isOwner) return; // Prevent drag end for non-owners
+
     const { active, over } = event;
 
     setActiveBinder(null);
     setIsDragging(false);
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
 
     const activeData = active.data.current;
     if (!activeData) return;
@@ -143,7 +153,8 @@ export function BindersList({
     if (
       activeIndex !== undefined &&
       overIndex !== undefined &&
-      activeIndex !== overIndex
+      activeIndex !== overIndex &&
+      onReorder
     ) {
       // Simple swap approach like cards - much faster!
       const updatedBinders = binders.map((binder, index) => {
@@ -166,14 +177,18 @@ export function BindersList({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${
-          isDragging ? 'select-none' : ''
-        }`}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {binders.map((binder, index) => (
-          <DroppableBinderSlot key={`slot-${index}`} index={index}>
-            <DraggableBinderItem binder={binder} index={index}>
+          <DroppableBinderSlot
+            key={`slot-${index}`}
+            index={index}
+            isOwner={isOwner}
+          >
+            <DraggableBinderItem
+              binder={binder}
+              index={index}
+              isOwner={isOwner}
+            >
               <BinderCard binder={binder} />
             </DraggableBinderItem>
           </DroppableBinderSlot>
@@ -181,7 +196,7 @@ export function BindersList({
       </div>
 
       <DragOverlay>
-        {activeBinder ? (
+        {activeBinder && isOwner ? (
           <div className="opacity-95 rotate-6 scale-110 shadow-2xl">
             <BinderCard binder={activeBinder} />
           </div>

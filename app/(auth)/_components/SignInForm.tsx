@@ -1,5 +1,6 @@
 'use client';
 import { signInWithGoogle, signInWithPassword } from '@/lib/auth/actions';
+import { createClient } from '@/lib/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Anchor,
@@ -14,6 +15,7 @@ import {
 } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { GoogleButton } from './GoogleButton';
@@ -36,13 +38,46 @@ export function SignInForm() {
     resolver: zodResolver(signInSchema),
   });
 
-  // useMutation handles form submission, loading, and errors
+  // Handle OAuth callback (same method as email/password)
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        // Same redirect method as email/password
+        setTimeout(() => {
+          router.push('/profile');
+          router.refresh();
+        }, 100);
+      }
+    };
+
+    // Check if we're returning from OAuth
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('code') || urlParams.has('access_token')) {
+      handleAuthCallback();
+    }
+  }, [router]);
+
+  // Email/password sign-in (existing)
   const { mutate, isPending, error } = useMutation({
     mutationFn: signInWithPassword,
     onSuccess: () => {
-      // Redirects on success
-      router.push('/profile');
-      router.refresh();
+      setTimeout(() => {
+        router.push('/profile');
+        router.refresh();
+      }, 100);
+    },
+  });
+
+  // Google sign-in - simplified to use same redirect method
+  const { mutate: googleMutate, isPending: googlePending } = useMutation({
+    mutationFn: signInWithGoogle,
+    onSuccess: () => {
+      // Don't redirect here - let the useEffect handle it after OAuth callback
     },
   });
 
@@ -54,7 +89,11 @@ export function SignInForm() {
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
         <Group grow mb="md" mt="md">
-          <GoogleButton radius="xl" onClick={() => signInWithGoogle()}>
+          <GoogleButton
+            radius="xl"
+            onClick={() => googleMutate()}
+            loading={googlePending}
+          >
             continue with google
           </GoogleButton>
         </Group>

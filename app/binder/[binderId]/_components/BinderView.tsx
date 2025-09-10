@@ -482,13 +482,15 @@ export function BinderView({
           </Text>
         </div>
         <Group>
-          <Button
-            leftSection={<IconSearch size={16} />}
-            variant="light"
-            onClick={openSearch}
-          >
-            add cards
-          </Button>
+          {isOwner && ( // Add this condition
+            <Button
+              leftSection={<IconSearch size={16} />}
+              variant="light"
+              onClick={openSearch}
+            >
+              add cards
+            </Button>
+          )}
           {isOwner && (
             <Button
               leftSection={<IconSettings size={16} />}

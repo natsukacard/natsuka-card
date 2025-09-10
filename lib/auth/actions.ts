@@ -81,18 +81,13 @@ export const updatePassword = async ({ password }: { password: string }) => {
  * Google OAuth sign-in flow
  * Redirects the user to the Google's authentication page
  */
-export const signInWithGoogle = async (redirectPath?: string) => {
+export const signInWithGoogle = async () => {
   const supabase = createClient();
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/callback`,
-      ...(redirectPath && {
-        queryParams: {
-          redirect_path: encodeURIComponent(redirectPath),
-        },
-      }),
+      redirectTo: `${window.location.origin}/profile`,
     },
   });
 

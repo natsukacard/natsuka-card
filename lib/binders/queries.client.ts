@@ -184,6 +184,28 @@ export const getBinderById = async (binderId: string) => {
   };
 };
 
+/**
+ * Fetches public binders for a specific user
+ */
+export const getPublicBinders = async (userId: string) => {
+  const supabase = createClient();
+
+  // Simplified query without the user join
+  const { data, error } = await supabase
+    .from('binders')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_private', false)
+    .order('order', { ascending: true });
+
+  if (error) {
+    console.error('Supabase error:', error);
+    throw error;
+  }
+
+  return data;
+};
+
 // Mutation functions
 
 /**
