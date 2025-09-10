@@ -107,7 +107,6 @@ export function BindersList({
   isOwner?: boolean;
 }) {
   const [activeBinder, setActiveBinder] = useState<Binder | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -121,7 +120,6 @@ export function BindersList({
     if (!isOwner) return; // Prevent drag start for non-owners
 
     const { active } = event;
-    setIsDragging(true);
 
     if (active.data.current?.type === 'binder') {
       setActiveBinder(active.data.current.binder);
@@ -134,7 +132,6 @@ export function BindersList({
     const { active, over } = event;
 
     setActiveBinder(null);
-    setIsDragging(false);
 
     if (!over || active.id === over.id) return;
 

@@ -17,8 +17,7 @@ import { BindersList } from './BinderList';
 export function ProfileView() {
   const { data: binders, isLoading, error } = useBinders();
   const [opened, { open, close }] = useDisclosure(false);
-  const { mutate: reorderBinders, isPending: isReordering } =
-    useUpdateBinderOrder();
+  const { mutate: reorderBinders } = useUpdateBinderOrder();
 
   const handleBinderReorder = (
     updatedBinders: { id: string; order: number }[]

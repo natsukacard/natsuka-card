@@ -45,7 +45,7 @@ export function PublicProfileView({ userId }: { userId: string }) {
   if (error) {
     return (
       <Container my="md">
-        <Text c="red">This profile is private or doesn't exist.</Text>
+        <Text c="red">This profile is private or doesn&apos;t exist.</Text>
       </Container>
     );
   }
