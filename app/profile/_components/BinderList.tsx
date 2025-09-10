@@ -23,7 +23,7 @@ function DroppableBinderSlot({
   index: number;
   children: React.ReactNode;
 }) {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: `droppable-${index}`,
     data: {
       type: 'droppable',
@@ -32,7 +32,14 @@ function DroppableBinderSlot({
   });
 
   return (
-    <div ref={setNodeRef} className="min-h-[200px]">
+    <div
+      ref={setNodeRef}
+      className={`min-h-[200px] transition-all duration-200 ${
+        isOver
+          ? 'bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg'
+          : ''
+      }`}
+    >
       {children}
     </div>
   );
@@ -62,6 +69,7 @@ function DraggableBinderItem({
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
         zIndex: 1000,
+        cursor: 'grabbing',
       }
     : {};
 
@@ -72,8 +80,10 @@ function DraggableBinderItem({
       {...attributes}
       style={style}
       className={`transition-all duration-200 ${
-        isDragging ? 'opacity-50' : ''
-      } cursor-grab active:cursor-grabbing`}
+        isDragging
+          ? 'opacity-30 scale-105 shadow-xl rotate-2'
+          : 'opacity-100 hover:shadow-md cursor-grab active:cursor-grabbing'
+      }`}
     >
       {children}
     </div>
@@ -156,7 +166,11 @@ export function BindersList({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${
+          isDragging ? 'select-none' : ''
+        }`}
+      >
         {binders.map((binder, index) => (
           <DroppableBinderSlot key={`slot-${index}`} index={index}>
             <DraggableBinderItem binder={binder} index={index}>
@@ -168,7 +182,7 @@ export function BindersList({
 
       <DragOverlay>
         {activeBinder ? (
-          <div className="opacity-80 rotate-3 shadow-lg">
+          <div className="opacity-95 rotate-6 scale-110 shadow-2xl">
             <BinderCard binder={activeBinder} />
           </div>
         ) : null}
