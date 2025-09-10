@@ -1,10 +1,12 @@
 'use client';
+
 import { Container, SimpleGrid, Skeleton, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 
 import { useUser } from '@/lib/auth/queries';
 import {
   getPublicBinders,
+  getUserProfile,
   useUpdateBinderOrder,
 } from '@/lib/binders/queries.client';
 import { BindersList } from './BinderList';
@@ -19,9 +21,17 @@ export function PublicProfileView({ userId }: { userId: string }) {
     reorderBinders({ binders: updatedBinders });
   };
 
+  // Separate query for user profile
+  const { data: userProfile, isLoading: userLoading } = useQuery({
+    queryKey: ['user-profile', userId],
+    queryFn: () => getUserProfile(userId),
+    enabled: !!userId,
+  });
+
+  // Query for binders
   const {
     data: binders,
-    isLoading,
+    isLoading: bindersLoading,
     error,
   } = useQuery({
     queryKey: ['public-binders', userId],
@@ -29,7 +39,20 @@ export function PublicProfileView({ userId }: { userId: string }) {
     enabled: !!userId,
   });
 
-  if (isLoading) {
+  const getUserDisplayName = () => {
+    console.log('userProfile:', userProfile); // Add this debug line
+    console.log('userLoading:', userLoading); // Add this debug line
+
+    if (!userProfile || !userProfile.username) {
+      console.log('No userProfile or username, returning fallback'); // Debug
+      return isOwner ? 'My' : 'User';
+    }
+
+    console.log('Using username:', userProfile.username); // Debug
+    return userProfile.username;
+  };
+
+  if (bindersLoading || userLoading) {
     return (
       <Container size="md" my="lg">
         <Skeleton height={40} width={200} mb="xl" />
@@ -53,9 +76,7 @@ export function PublicProfileView({ userId }: { userId: string }) {
   return (
     <Container size="md" my="lg">
       <Title order={2} fz={{ base: 24, sm: 28 }} mb="xl">
-        {isOwner
-          ? 'My Binders'
-          : `${binders?.[0]?.user?.name || 'User'}'s Binders`}
+        {isOwner ? 'My Binders' : `${getUserDisplayName()}'s Binders`}
       </Title>
 
       {binders && binders.length > 0 ? (

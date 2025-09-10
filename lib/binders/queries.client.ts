@@ -190,7 +190,7 @@ export const getBinderById = async (binderId: string) => {
 export const getPublicBinders = async (userId: string) => {
   const supabase = createClient();
 
-  // Simplified query without the user join
+  // Remove the problematic join for now
   const { data, error } = await supabase
     .from('binders')
     .select('*')
@@ -405,5 +405,85 @@ export function useUpdateBinderOrder() {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['binders'] });
     },
+  });
+}
+
+/**
+ * Fetches user profile data by user ID
+ */
+export const getUserProfile = async (userId: string) => {
+  const supabase = createClient();
+
+  console.log('getUserProfile called with userId:', userId);
+
+  // Get the current authenticated user
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  console.log('Current user ID:', currentUser?.id);
+  console.log('Requested user ID:', userId);
+  console.log('Are they the same?', currentUser?.id === userId);
+
+  // If the requested userId is the current user, we can access their metadata
+  if (currentUser && currentUser.id === userId) {
+    const profile = {
+      id: currentUser.id,
+      username:
+        currentUser.user_metadata?.username ||
+        currentUser.user_metadata?.name ||
+        currentUser.email?.split('@')[0],
+      avatar_url: currentUser.user_metadata?.avatar_url,
+      is_premium: false,
+    };
+    console.log('Returning current user profile:', profile);
+    return profile;
+  }
+
+  // For other users, check user_profiles table
+  console.log('Querying user_profiles table for userId:', userId);
+  const { data: profile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('id, username, avatar_url, is_premium')
+    .eq('id', userId)
+    .single();
+
+  console.log('Raw database query result:', { profile, profileError });
+
+  // Log the specific error details
+  if (profileError) {
+    console.error('Profile query error details:', {
+      code: profileError.code,
+      message: profileError.message,
+      details: profileError.details,
+      hint: profileError.hint,
+    });
+  }
+
+  if (!profileError && profile) {
+    console.log('Returning profile from database:', profile);
+    return profile;
+  }
+
+  console.log('No profile found, returning default object');
+  return {
+    id: userId,
+    username: null,
+    avatar_url: null,
+    is_premium: false,
+  };
+};
+
+/**
+ * Hook to fetch user profile data
+ */
+export function useUserProfile(userId: string) {
+  return useQuery({
+    queryKey: ['user-profile', userId],
+    queryFn: () => {
+      console.log('Querying for userId:', userId); // Add this
+      return getUserProfile(userId);
+    },
+    enabled: !!userId,
   });
 }
