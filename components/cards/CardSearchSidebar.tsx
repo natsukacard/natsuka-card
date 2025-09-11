@@ -14,11 +14,13 @@ import {
   Group,
   Image,
   Loader,
+  NumberInput,
   Pagination,
   Paper,
   ScrollArea,
   Select,
   SimpleGrid,
+  Stack,
   Text,
 } from '@mantine/core';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
@@ -137,12 +139,14 @@ function SearchResultCard({
 export function CardSearchSidebar({
   opened,
   onClose,
+  onCardSelect,
   onCardClick,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersOpened, { toggle: toggleFilters }] = useDisclosure(false);
+  const [jumpToPage, setJumpToPage] = useState<number | string>(''); // Added for jump functionality
 
   // Filter and sort states
   const [filters, setFilters] = useState<SearchFilters>({
@@ -171,6 +175,15 @@ export function CardSearchSidebar({
     return results.slice(startIndex, endIndex);
   }, [results, currentPage]);
 
+  // Jump to page handler (matching BinderPagination)
+  const handleJumpToPage = () => {
+    const pageNum = Number(jumpToPage);
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+      setJumpToPage('');
+    }
+  };
+
   const suggestions = useMemo(() => {
     if (!debouncedSearchTerm) return [];
 
@@ -181,10 +194,10 @@ export function CardSearchSidebar({
     results.forEach((card) => {
       if (
         card.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) &&
-        !uniqueItems.has(card.name.toLowerCase())
+        !uniqueItems.has(card.name)
       ) {
-        uniqueItems.add(card.name.toLowerCase());
-        allSuggestions.push(card.name.toLowerCase());
+        uniqueItems.add(card.name);
+        allSuggestions.push(card.name);
       }
     });
 
@@ -194,10 +207,10 @@ export function CardSearchSidebar({
         card.set_name
           .toLowerCase()
           .includes(debouncedSearchTerm.toLowerCase()) &&
-        !uniqueItems.has(card.set_name.toLowerCase())
+        !uniqueItems.has(card.set_name)
       ) {
-        uniqueItems.add(card.set_name.toLowerCase());
-        allSuggestions.push(card.set_name.toLowerCase());
+        uniqueItems.add(card.set_name);
+        allSuggestions.push(card.set_name);
       }
     });
 
@@ -251,6 +264,10 @@ export function CardSearchSidebar({
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
 
+  // Calculate showing text (matching BinderPagination)
+  const startCard = (currentPage - 1) * CARDS_PER_PAGE + 1;
+  const endCard = Math.min(startCard + CARDS_PER_PAGE - 1, results.length);
+
   return (
     <Drawer
       opened={opened}
@@ -283,11 +300,6 @@ export function CardSearchSidebar({
           rightSection={isLoading ? <Loader size="1rem" /> : null}
           limit={10}
           maxDropdownHeight={200}
-          styles={{
-            option: {
-              textTransform: 'lowercase',
-            },
-          }}
         />
 
         {/* Filter Controls */}
@@ -314,85 +326,57 @@ export function CardSearchSidebar({
         </Group>
 
         <Collapse in={filtersOpened}>
-          <Paper p="md" radius="md" withBorder>
-            <div className="space-y-3">
-              <Group grow>
-                <Select
-                  label="sort by"
-                  placeholder="relevance"
-                  value={filters.sortBy}
-                  onChange={(value) =>
-                    handleFilterChange('sortBy', value as SortOption)
-                  }
-                  data={sortOptions}
-                  size="xs"
-                  styles={{
-                    option: {
-                      textTransform: 'lowercase',
-                    },
-                    input: {
-                      textTransform: 'lowercase',
-                    },
-                  }}
-                />
-                <Select
-                  label="order"
-                  placeholder="descending"
-                  value={filters.sortDirection}
-                  onChange={(value) =>
-                    handleFilterChange('sortDirection', value as SortDirection)
-                  }
-                  data={[
-                    { value: 'desc', label: 'descending' },
-                    { value: 'asc', label: 'ascending' },
-                  ]}
-                  size="xs"
-                  className="lowercase"
-                />
-              </Group>
+          <div className="space-y-3 p-3 bg-gray-50 rounded-md">
+            <Group grow>
+              <Select
+                label="sort by"
+                placeholder="relevance"
+                value={filters.sortBy}
+                onChange={(value) =>
+                  handleFilterChange('sortBy', value as SortOption)
+                }
+                data={sortOptions}
+                size="xs"
+              />
+              <Select
+                label="order"
+                placeholder="descending"
+                value={filters.sortDirection}
+                onChange={(value) =>
+                  handleFilterChange('sortDirection', value as SortDirection)
+                }
+                data={[
+                  { value: 'desc', label: 'Descending' },
+                  { value: 'asc', label: 'Ascending' },
+                ]}
+                size="xs"
+              />
+            </Group>
 
-              <Group grow>
-                <Select
-                  label="set"
-                  placeholder="all sets"
-                  value={filters.setFilter}
-                  onChange={(value) => handleFilterChange('setFilter', value)}
-                  data={uniqueSets}
-                  searchable
-                  clearable
-                  size="xs"
-                  className="lowercase"
-                />
-                <Select
-                  label="rarity"
-                  placeholder="all rarities"
-                  value={filters.rarityFilter}
-                  onChange={(value) =>
-                    handleFilterChange('rarityFilter', value)
-                  }
-                  data={uniqueRarities}
-                  searchable
-                  clearable
-                  size="xs"
-                  className="lowercase"
-                />
-              </Group>
-            </div>
-          </Paper>
+            <Group grow>
+              <Select
+                label="set"
+                placeholder="all sets"
+                value={filters.setFilter}
+                onChange={(value) => handleFilterChange('setFilter', value)}
+                data={uniqueSets}
+                searchable
+                clearable
+                size="xs"
+              />
+              <Select
+                label="rarity"
+                placeholder="all rarities"
+                value={filters.rarityFilter}
+                onChange={(value) => handleFilterChange('rarityFilter', value)}
+                data={uniqueRarities}
+                searchable
+                clearable
+                size="xs"
+              />
+            </Group>
+          </div>
         </Collapse>
-
-        {debouncedSearchTerm && (
-          <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              {results.length} results found
-            </Text>
-            {totalPages > 1 && (
-              <Text size="sm" c="dimmed">
-                Page {currentPage} of {totalPages}
-              </Text>
-            )}
-          </Group>
-        )}
 
         <ScrollArea className="flex-1" type="auto">
           {paginatedResults.length > 0 ? (
@@ -420,16 +404,66 @@ export function CardSearchSidebar({
           ) : null}
         </ScrollArea>
 
+        {/* Enhanced pagination with jump-to-page (matching BinderPagination) */}
         {totalPages > 1 && (
-          <Group justify="center" pt="sm">
-            <Pagination
-              total={totalPages}
-              value={currentPage}
-              onChange={setCurrentPage}
-              size="sm"
-              radius="md"
-            />
-          </Group>
+          <Stack gap="sm" mt="md">
+            {/* Main pagination */}
+            <Group justify="center" align="center">
+              <Pagination
+                color="#6796ec"
+                value={currentPage}
+                onChange={setCurrentPage}
+                total={totalPages}
+                size="md"
+                withEdges
+                siblings={0}
+                boundaries={1}
+                style={{ fontSize: '18px' }}
+              />
+            </Group>
+
+            {/* Jump to page and info */}
+            <Group justify="space-between" align="center">
+              <Text size="sm" c="dimmed">
+                showing {startCard}-{endCard} of {results.length} cards
+              </Text>
+
+              {totalPages > 5 && (
+                <Group gap="xs">
+                  <NumberInput
+                    value={jumpToPage}
+                    onChange={setJumpToPage}
+                    placeholder="page"
+                    hideControls
+                    radius="xl"
+                    min={1}
+                    max={totalPages}
+                    size="xs"
+                    w={70}
+                    styles={{ input: { textAlign: 'center' } }}
+                  />
+                  <Button
+                    size="xs"
+                    color="#6796ec"
+                    radius="xl"
+                    variant="light"
+                    onClick={handleJumpToPage}
+                    disabled={
+                      !jumpToPage ||
+                      Number(jumpToPage) < 1 ||
+                      Number(jumpToPage) > totalPages
+                    }
+                  >
+                    go
+                  </Button>
+                </Group>
+              )}
+
+              <Text size="sm" c="dimmed">
+                page {currentPage} of {totalPages}
+              </Text>
+            </Group>
+          </Stack>
         )}
       </div>
     </Drawer>

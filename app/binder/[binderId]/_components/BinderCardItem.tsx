@@ -3,6 +3,7 @@ import { ContextMenu } from '@/components/ui/ContextMenu';
 import { type Card } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { AspectRatio, Image, Paper, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 
 interface BinderCardItemProps {
   card: Card;
@@ -87,6 +88,34 @@ export function BinderCardItem({
     onCardClick?.(card);
   };
 
+  // Responsive sizing
+  const isMobile = useMediaQuery('(max-width: 480px)');
+  const isTablet = useMediaQuery('(max-width: 768px)');
+
+  const getCardStyles = () => {
+    if (isMobile) {
+      return {
+        padding: 0, // Reduced from 2
+        borderRadius: 'sm',
+        fontSize: 'xs',
+      };
+    }
+    if (isTablet) {
+      return {
+        padding: 0, // Reduced from 4
+        borderRadius: 'md',
+        fontSize: 'sm',
+      };
+    }
+    return {
+      padding: 0, // Reduced from 6
+      borderRadius: 'lg',
+      fontSize: 'md',
+    };
+  };
+
+  const cardStyles = getCardStyles();
+
   const cardContent = (
     <div
       ref={setDroppableNodeRef}
@@ -104,6 +133,7 @@ export function BinderCardItem({
           className={`overflow-hidden shadow-sm transition-transform cursor-pointer ${showPreview ? 'opacity-30' : ''}`}
           onClick={handleCardClick}
           data-drag-handle
+          p={cardStyles.padding}
         >
           <AspectRatio ratio={63 / 88}>
             {cardData?.image_large ? (

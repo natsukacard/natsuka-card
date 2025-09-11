@@ -3,7 +3,8 @@ import { ContextMenu } from '@/components/ui/ContextMenu';
 import { useAddCardToBinder } from '@/lib/cards/queries.client';
 import { type Card } from '@/lib/types';
 import { useDroppable } from '@dnd-kit/core';
-import { AspectRatio, Image, Paper, Text } from '@mantine/core';
+import { AspectRatio, Box, Image, Paper, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
@@ -95,8 +96,39 @@ export function EmptyCardSlot({
     onInsertAfter?.(slotIndex + 1);
   };
 
+  // Responsive sizing
+  const isMobile = useMediaQuery('(max-width: 480px)');
+  const isTablet = useMediaQuery('(max-width: 768px)');
+
+  const getSlotStyles = () => {
+    if (isMobile) {
+      return {
+        padding: 0, // Reduced from 2
+        borderRadius: 'sm' as const,
+      };
+    }
+    if (isTablet) {
+      return {
+        padding: 0, // Reduced from 4
+        borderRadius: 'md' as const,
+      };
+    }
+    return {
+      padding: 0, // Reduced from 6
+      borderRadius: 'lg' as const,
+    };
+  };
+
+  const slotStyles = getSlotStyles();
+
   const emptySlotContent = (
-    <>
+    <Box
+      style={{
+        width: '100%',
+        height: '100%',
+        minWidth: 'var(--card-min-width)',
+      }}
+    >
       <div
         ref={setNodeRef}
         className={`
@@ -109,7 +141,8 @@ export function EmptyCardSlot({
       >
         {/* Empty Slot */}
         <Paper
-          radius="lg"
+          radius={slotStyles.borderRadius}
+          p={slotStyles.padding}
           withBorder
           style={{
             borderStyle: showPreview ? 'solid' : 'dashed',
@@ -121,10 +154,7 @@ export function EmptyCardSlot({
           }}
           className={`overflow-hidden transition-transform ${showPreview ? 'opacity-30' : ''}`}
         >
-          <AspectRatio
-            ratio={63 / 88}
-            style={{ width: '400px', height: 'auto' }}
-          >
+          <AspectRatio ratio={63 / 88}>
             <div className="flex h-full w-full items-center justify-center rounded-lg">
               {isOwner && !showPreview ? (
                 <Text size="xs" c="dimmed">
@@ -141,7 +171,7 @@ export function EmptyCardSlot({
         {showPreview && (
           <div className="absolute inset-0 z-10">
             <Paper
-              radius="lg"
+              radius={slotStyles.borderRadius}
               className="overflow-hidden shadow-md opacity-80 ring-2 ring-green-400 ring-opacity-75"
             >
               <AspectRatio ratio={63 / 88}>
@@ -180,7 +210,7 @@ export function EmptyCardSlot({
         onClose={() => setSearchModalOpened(false)}
         onCardSelect={handleCardSelect}
       />
-    </>
+    </Box>
   );
 
   // Wrap with context menu if owner and handlers are provided
