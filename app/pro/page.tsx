@@ -1,5 +1,5 @@
-// Use default imports for your components
 import { createClient } from '@/lib/supabase/server';
+import { Container, Stack, Text, Title } from '@mantine/core';
 import ComparisonTable from './_components/ComparisonTable';
 import PricingCards from './_components/PricingCards';
 
@@ -8,43 +8,19 @@ export default async function PricingPage() {
   // --- Stripe Integration Logic ---
   const plans = {
     pro: {
-      monthly: {
-        link:
-          process.env.NODE_ENV === 'development'
-            ? process.env.NEXT_PUBLIC_STRIPE_TEST_MONTHLY_LINK
-            : process.env.NEXT_PUBLIC_STRIPE_LIVE_MONTHLY_LINK,
-        priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID,
-        priceTotal: 3.99,
-        pricePerMonth: 3.99,
-      },
-      yearly: {
-        link:
-          process.env.NODE_ENV === 'development'
-            ? process.env.NEXT_PUBLIC_STRIPE_TEST_YEARLY_LINK
-            : process.env.NEXT_PUBLIC_STRIPE_LIVE_YEARLY_LINK,
-        priceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID,
+      annual: {
+        link: process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PAYMENT_LINK,
+        priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID,
         priceTotal: 34.99,
         pricePerMonth: 2.92,
       },
     },
     proPlus: {
-      monthly: {
-        link:
-          process.env.NODE_ENV === 'development'
-            ? process.env.NEXT_PUBLIC_STRIPE_TEST_MONTHLY_LINK
-            : process.env.NEXT_PUBLIC_STRIPE_LIVE_MONTHLY_LINK,
-        priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID,
-        priceTotal: 9.99,
-        pricePerMonth: 9.99,
-      },
-      yearly: {
-        link:
-          process.env.NODE_ENV === 'development'
-            ? process.env.NEXT_PUBLIC_STRIPE_TEST_YEARLY_LINK
-            : process.env.NEXT_PUBLIC_STRIPE_LIVE_YEARLY_LINK,
-        priceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID,
+      annual: {
+        link: process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_ANNUAL_PAYMENT_LINK,
+        priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_ANNUAL_PRICE_ID,
         priceTotal: 99.99,
-        pricePerMonth: 8.34,
+        pricePerMonth: 8.33,
       },
     },
   };
@@ -53,26 +29,24 @@ export default async function PricingPage() {
   const user = await supabase.auth.getClaims();
 
   return (
-    <div className="min-h-screen font-sans text-[#71698f]">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <Container size="lg" py="xl">
+      <Stack gap="xl">
         {/* Header Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-            unlock natsuka pro
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-400 sm:text-xl">
-            get access to more binders, personalize your profile, customize your
-            collecting and trading experience and so many other exclusive
-            features!
-          </p>
-        </div>
+        <Stack gap="md" ta="center">
+          <Title order={1} size="h1">
+            Unlock Natsuka Pro
+          </Title>
+          <Text size="xl" c="dimmed" maw={600} mx="auto">
+            Choose the plan that's right for you
+          </Text>
+        </Stack>
 
         {/* Pricing Cards */}
         <PricingCards plans={plans} user={user} />
 
         {/* Feature Comparison Table */}
         <ComparisonTable />
-      </div>
-    </div>
+      </Stack>
+    </Container>
   );
 }

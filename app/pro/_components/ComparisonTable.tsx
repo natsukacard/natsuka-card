@@ -1,15 +1,23 @@
 'use client';
 
-import React from 'react';
-import CheckIcon from './CheckIcon';
+import {
+  Badge,
+  Paper,
+  Stack,
+  Table,
+  Text,
+  ThemeIcon,
+  Title,
+} from '@mantine/core';
+import { IconCheck, IconMinus } from '@tabler/icons-react';
 
 const ComparisonTable = () => {
   const features = [
     {
       category: 'Core Features',
       items: [
-        { name: 'Number of Binders', free: '5', pro: '20' },
-        { name: 'Custom Url Link', free: false, pro: true },
+        { name: 'Number of Binders', free: '5', pro: 'Unlimited' },
+        { name: 'Custom URL Link', free: false, pro: true },
         { name: 'Webhooks', free: true, pro: true },
         { name: 'Templates', free: true, pro: true },
       ],
@@ -26,69 +34,82 @@ const ComparisonTable = () => {
       category: 'Advanced',
       items: [
         { name: 'Dedicated IP Address', free: false, pro: true },
-        { name: 'Role-based access control', free: false, pro: true },
+        { name: 'Role-based Access Control', free: false, pro: true },
         { name: 'Audit Logs', free: false, pro: true },
       ],
     },
   ];
 
-  const renderCheck = (value: boolean | string) => {
+  const renderFeature = (value: boolean | string) => {
     if (typeof value === 'boolean') {
       return value ? (
-        <CheckIcon className="mx-auto text-green-500" />
+        <ThemeIcon color="green" size="sm" variant="light" radius="xl">
+          <IconCheck size={16} />
+        </ThemeIcon>
       ) : (
-        <span className="mx-auto text-lg text-gray-500">-</span>
+        <ThemeIcon color="gray" size="sm" variant="light" radius="xl">
+          <IconMinus size={16} />
+        </ThemeIcon>
       );
     }
-    return <span className="text-sm text-gray-500">{value}</span>;
+    return (
+      <Badge variant="light" color="blue" size="sm">
+        {value}
+      </Badge>
+    );
   };
 
+  const rows = features.flatMap((category) => [
+    // Category header row
+    <Table.Tr key={category.category} bg="gray.0">
+      <Table.Td colSpan={3}>
+        <Text fw={600} size="sm">
+          {category.category}
+        </Text>
+      </Table.Td>
+    </Table.Tr>,
+    // Feature rows
+    ...category.items.map((item) => (
+      <Table.Tr key={item.name}>
+        <Table.Td>
+          <Text size="sm">{item.name}</Text>
+        </Table.Td>
+        <Table.Td ta="center">{renderFeature(item.free)}</Table.Td>
+        <Table.Td ta="center">{renderFeature(item.pro)}</Table.Td>
+      </Table.Tr>
+    )),
+  ]);
+
   return (
-    <div className="mt-24">
-      <h2 className="mb-12 text-center text-3xl font-extrabold sm:text-4xl">
-        pick the right plan for you
-      </h2>
-      <div className="overflow-x-auto">
-        <div className="mx-auto max-w-4xl min-w-full lg:w-full lg:min-w-0">
-          <table className="w-full table-fixed text-left">
-            <thead className="border-b border-gray-700">
-              <tr>
-                <th className="w-1/2 p-4 text-lg font-semibold">Features</th>
-                <th className="w-1/4 p-4 text-center text-lg font-semibold">
-                  Free
-                </th>
-                <th className="w-1/4 p-4 text-center text-lg font-semibold">
-                  Pro
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* FIX: Replaced invalid nested <tbody> with React.Fragment to prevent hydration errors. */}
-              {features.map((category) => (
-                <React.Fragment key={category.category}>
-                  <tr className="bg-gray-200">
-                    <td colSpan={3} className="p-4 text-lg font-semibold">
-                      {category.category}
-                    </td>
-                  </tr>
-                  {category.items.map((item) => (
-                    <tr key={item.name} className="border-b border-gray-800">
-                      <td className="p-4">{item.name}</td>
-                      <td className="p-4 text-center">
-                        {renderCheck(item.free)}
-                      </td>
-                      <td className="p-4 text-center">
-                        {renderCheck(item.pro)}
-                      </td>
-                    </tr>
-                  ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <Stack gap="xl" mt="xl">
+      <div style={{ textAlign: 'center' }}>
+        <Title order={2} mb="md">
+          Pick the Right Plan for You
+        </Title>
+        <Text size="lg" c="dimmed">
+          Compare features across all plans
+        </Text>
       </div>
-    </div>
+
+      <Paper shadow="sm" radius="md" p="md">
+        <Table highlightOnHover verticalSpacing="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w="50%">
+                <Text fw={600}>Features</Text>
+              </Table.Th>
+              <Table.Th ta="center" w="25%">
+                <Text fw={600}>Free</Text>
+              </Table.Th>
+              <Table.Th ta="center" w="25%">
+                <Text fw={600}>Pro</Text>
+              </Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </Paper>
+    </Stack>
   );
 };
 

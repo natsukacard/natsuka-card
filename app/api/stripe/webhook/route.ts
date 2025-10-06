@@ -1,131 +1,159 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
+  apiVersion: '2025-08-27.basil',
 });
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SIGNING_SECRET!;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// Helper function to convert Unix timestamp to ISO 8601 string
-const toDateTime = (secs: number) => {
-  const t = new Date(0);
-  t.setUTCSeconds(secs);
-  return t.toISOString();
-};
+export async function POST(req: NextRequest) {
+  console.log('=== WEBHOOK RECEIVED ===');
 
-export async function POST(req: Request) {
   const body = await req.text();
-  const signature = req.headers.get('stripe-signature')!;
+  const sig = req.headers.get('stripe-signature')!;
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+    console.log('Event verified successfully:', event.type);
   } catch (err: any) {
-    console.error(`❌ Error message: ${err.message}`);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    console.error('Webhook signature verification failed:', err.message);
+    return NextResponse.json({ error: 'Webhook error' }, { status: 400 });
   }
 
-  const supabase = await createClient();
-
-  // Handle the event
   switch (event.type) {
-    // This event fires when a subscription is created or updated.
-    // It's the most important one for keeping your DB in sync.
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
+    case 'checkout.session.completed':
+      console.log('CHECKOUT SESSION COMPLETED - Processing...');
+      const session = event.data.object as Stripe.Checkout.Session;
+      console.log('Session ID:', session.id);
+      console.log('Client Reference ID:', session.client_reference_id);
+      console.log('Customer ID:', session.customer);
+      console.log('Subscription ID:', session.subscription);
+      console.log('Amount Total:', session.amount_total);
 
-      // The user ID should be passed in the subscription's metadata
-      // when you first create it. This is more reliable than using checkout session metadata.
-      const userId = subscription.metadata.userId;
+      if (session.client_reference_id) {
+        let planType = 'pro';
+        const amount = session.amount_total || 0;
+        if (amount >= 9999) {
+          planType = 'pro_plus';
+        }
 
-      if (!userId) {
-        console.error(
-          '❌ Webhook Error: Missing userId in subscription metadata.'
+        console.log('Plan type determined:', planType);
+        console.log(
+          'Updating user profile for user:',
+          session.client_reference_id
         );
-        return new NextResponse('Webhook Error: Missing userId', {
-          status: 400,
-        });
+
+        // Update user_profiles table
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .update({
+            is_premium: true,
+            plan_type: planType,
+            stripe_customer_id: session.customer,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', session.client_reference_id)
+          .select();
+
+        if (profileError) {
+          console.error('FAILED to update user profile:', profileError);
+        } else {
+          console.log('SUCCESS: User profile updated:', profileData);
+        }
+
+        // Handle subscription if present
+        if (session.subscription) {
+          console.log(
+            'Session has subscription, creating subscription record...'
+          );
+          try {
+            const subscription = await stripe.subscriptions.retrieve(
+              session.subscription as string
+            );
+            console.log('Retrieved subscription from Stripe:', subscription.id);
+
+            // Use type assertion and handle the API version differences
+            const sub = subscription as any;
+            console.log('Raw subscription data:', {
+              current_period_start: sub.current_period_start,
+              current_period_end: sub.current_period_end,
+              created: sub.created,
+            });
+
+            // Helper function to safely convert timestamps
+            const safeTimestamp = (timestamp: any) => {
+              if (!timestamp) return null;
+              try {
+                const date = new Date(timestamp * 1000);
+                if (isNaN(date.getTime())) {
+                  console.warn('Invalid timestamp:', timestamp);
+                  return null;
+                }
+                return date.toISOString();
+              } catch (error) {
+                console.warn('Error converting timestamp:', timestamp, error);
+                return null;
+              }
+            };
+
+            const subscriptionData = {
+              user_id: session.client_reference_id,
+              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: sub.id,
+              stripe_price_id: sub.items?.data?.[0]?.price?.id || null,
+              stripe_product_id:
+                (sub.items?.data?.[0]?.price?.product as string) || null,
+              status: sub.status,
+              current_period_start: safeTimestamp(sub.current_period_start),
+              current_period_end: safeTimestamp(sub.current_period_end),
+              trial_start: safeTimestamp(sub.trial_start),
+              trial_end: safeTimestamp(sub.trial_end),
+              cancel_at_period_end: sub.cancel_at_period_end || false,
+              canceled_at: safeTimestamp(sub.canceled_at),
+              created_at:
+                safeTimestamp(sub.created) || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            console.log('Subscription data to insert:', subscriptionData);
+
+            const { data: subData, error: subError } = await supabase
+              .from('subscriptions')
+              .upsert(subscriptionData)
+              .select();
+
+            if (subError) {
+              console.error('FAILED to create subscription record:', subError);
+            } else {
+              console.log('SUCCESS: Subscription record created:', subData);
+            }
+          } catch (stripeError) {
+            console.error(
+              'FAILED to fetch subscription from Stripe:',
+              stripeError
+            );
+          }
+        } else {
+          console.log('No subscription ID in session');
+        }
+      } else {
+        console.error('No client_reference_id found in checkout session');
       }
-
-      const subscriptionData = {
-        user_id: userId,
-        stripe_customer_id: subscription.customer as string,
-        stripe_subscription_id: subscription.id,
-        stripe_price_id: subscription.items.data[0].price.id,
-        stripe_product_id: subscription.items.data[0].price.product as string,
-        status: subscription.status,
-        current_period_start: toDateTime(
-          subscription.items.data[0].current_period_start
-        ),
-        current_period_end: toDateTime(
-          subscription.items.data[0].current_period_end
-        ),
-        trial_start: subscription.trial_start
-          ? toDateTime(subscription.trial_start)
-          : null,
-        trial_end: subscription.trial_end
-          ? toDateTime(subscription.trial_end)
-          : null,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        canceled_at: subscription.canceled_at
-          ? toDateTime(subscription.canceled_at)
-          : null,
-      };
-
-      // Use upsert to either create a new subscription record or update an existing one.
-      const { error } = await supabase
-        .from('subscriptions')
-        .upsert(subscriptionData, { onConflict: 'stripe_subscription_id' });
-
-      if (error) {
-        console.error('Supabase upsert error:', error);
-        return new NextResponse(
-          'Webhook Error: Could not upsert subscription',
-          { status: 500 }
-        );
-      }
-
-      console.log(
-        `✅ Subscription synced for user: ${userId}, subscription: ${subscription.id}`
-      );
       break;
-    }
-
-    // This event fires when a subscription is permanently deleted.
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription;
-
-      // Update the status to 'canceled' and record the cancellation time.
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({
-          status: 'canceled', // Ensure status reflects deletion
-          canceled_at: subscription.canceled_at
-            ? toDateTime(subscription.canceled_at)
-            : new Date().toISOString(),
-        })
-        .eq('stripe_subscription_id', subscription.id);
-
-      if (error) {
-        console.error('Supabase update error on deletion:', error);
-        return new NextResponse(
-          'Webhook Error: Could not update subscription on deletion',
-          { status: 500 }
-        );
-      }
-
-      console.log(
-        `✅ Subscription deleted for subscription: ${subscription.id}`
-      );
-      break;
-    }
 
     default:
-      console.warn(`Unhandled event type: ${event.type}`);
+      console.log('Unhandled event type:', event.type);
   }
 
   return NextResponse.json({ received: true });

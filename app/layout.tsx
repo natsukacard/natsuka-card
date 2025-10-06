@@ -6,10 +6,10 @@ import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import '@mantine/core/styles.css';
 import { ContextMenuProvider } from 'mantine-contextmenu';
 import type { Metadata } from 'next';
-import { Geist_Mono, Lexend } from 'next/font/google';
+import { Geist_Mono, Outfit } from 'next/font/google';
 import './globals.css';
 
-const outfit = Lexend({
+const outfit = Outfit({
   variable: '--font-outfit',
   subsets: ['latin'],
   display: 'swap',
