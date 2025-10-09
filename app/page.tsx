@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 
 export default function Page() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -36,8 +37,31 @@ export default function Page() {
     router.replace('/', undefined);
   };
 
-  const handleLinkClick = (href: string) => {
-    setShowPasswordPrompt(true);
+  const handlePasswordSuccess = () => {
+    setHasAccess(true);
+    setShowPasswordPrompt(false);
+    router.replace('/', undefined);
+  };
+
+  const handleLinkClick = async (href: string) => {
+    // Check if user already has access by trying to verify the cookie
+    try {
+      const response = await fetch('/api/verify-access', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        // User has access, navigate directly
+        router.push(href);
+      } else {
+        // User doesn't have access, show password prompt
+        setShowPasswordPrompt(true);
+      }
+    } catch (error) {
+      // On error, show password prompt
+      setShowPasswordPrompt(true);
+    }
   };
 
   return (
@@ -161,7 +185,11 @@ export default function Page() {
         </section>
       </div>
 
-      <PasswordPrompt opened={showPasswordPrompt} onClose={handleCloseModal} />
+      <PasswordPrompt
+        opened={showPasswordPrompt}
+        onClose={handleCloseModal}
+        onSuccess={handlePasswordSuccess}
+      />
     </>
   );
 }

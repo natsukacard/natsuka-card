@@ -11,16 +11,23 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconLock } from '@tabler/icons-react';
 import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface PasswordPromptProps {
   opened: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function PasswordPrompt({ opened, onClose }: PasswordPromptProps) {
+export function PasswordPrompt({
+  opened,
+  onClose,
+  onSuccess,
+}: PasswordPromptProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const { mutate: verifyPassword, isPending } = useMutation({
     mutationFn: async (password: string) => {
@@ -38,7 +45,12 @@ export function PasswordPrompt({ opened, onClose }: PasswordPromptProps) {
       return response.json();
     },
     onSuccess: () => {
-      window.location.reload();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onClose();
+        router.push('/dashboard');
+      }
     },
     onError: (error: Error) => {
       setError(error.message);
@@ -52,13 +64,19 @@ export function PasswordPrompt({ opened, onClose }: PasswordPromptProps) {
     verifyPassword(password);
   };
 
+  const handleClose = () => {
+    setPassword('');
+    setError('');
+    onClose();
+  };
+
   return (
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={handleClose}
       withCloseButton={true}
       closeOnClickOutside={true}
-      closeOnEscape={false}
+      closeOnEscape={true}
       centered
       size="sm"
       radius="md"
@@ -104,7 +122,7 @@ export function PasswordPrompt({ opened, onClose }: PasswordPromptProps) {
             radius="md"
             style={{ backgroundColor: '#6796ec' }}
           >
-            access site
+            Access Site
           </Button>
         </Stack>
       </form>

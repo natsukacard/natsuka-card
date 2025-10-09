@@ -77,8 +77,8 @@ export function SignUpForm() {
   return (
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
-        <Group grow mb="md" mt="md">
-          <GoogleButton radius="xl" onClick={handleGoogleSignIn}>
+        <Group mb="md" mt="md">
+          <GoogleButton radius="xl" onClick={handleGoogleSignIn} fullWidth>
             continue with google
           </GoogleButton>{' '}
           {/* Add onClick handler */}

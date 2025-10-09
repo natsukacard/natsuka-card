@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROTECTED_PASSWORD = process.env.SITE_PASSWORD || 'natsuka-beta-2025';
+const PROTECTED_PASSWORD = process.env.SITE_PASSWORD;
 const COOKIE_NAME = 'site-access-token';
 
 export async function POST(request: NextRequest) {

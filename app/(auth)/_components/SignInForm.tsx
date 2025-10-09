@@ -88,11 +88,12 @@ export function SignInForm() {
   return (
     <Stack gap="lg">
       <Paper withBorder p={30} radius="xl">
-        <Group grow mb="md" mt="md">
+        <Group mb="md" mt="md">
           <GoogleButton
             radius="xl"
             onClick={() => googleMutate()}
             loading={googlePending}
+            fullWidth
           >
             continue with google
           </GoogleButton>
