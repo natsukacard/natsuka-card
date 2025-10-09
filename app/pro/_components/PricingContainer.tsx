@@ -13,6 +13,16 @@ import {
 } from '@mantine/core';
 import { useState } from 'react';
 
+interface User {
+  data?: {
+    claims?: {
+      sub?: string;
+      email?: string;
+    };
+  } | null;
+  error?: unknown;
+}
+
 interface PricingContainerProps {
   plans: {
     pro: {
@@ -30,7 +40,7 @@ interface PricingContainerProps {
       };
     };
   };
-  user: any;
+  user: User;
 }
 
 export default function PricingContainer({

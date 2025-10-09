@@ -25,10 +25,20 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Invalid password' },
       { status: 401 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Invalid request' },
       { status: 400 }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  const accessCookie = request.cookies.get(COOKIE_NAME);
+
+  if (accessCookie && accessCookie.value === PROTECTED_PASSWORD) {
+    return NextResponse.json({ hasAccess: true });
+  }
+
+  return NextResponse.json({ hasAccess: false }, { status: 401 });
 }

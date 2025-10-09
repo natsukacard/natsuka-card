@@ -13,12 +13,23 @@ interface Tier {
   annual: PlanDetails;
 }
 
+// Updated User type to match Supabase structure
+interface User {
+  data?: {
+    claims?: {
+      sub?: string;
+      email?: string;
+    };
+  } | null;
+  error?: unknown;
+}
+
 interface PricingCardsProps {
   plans: {
     pro: Tier;
     proPlus: Tier;
   };
-  user: any;
+  user: User;
 }
 
 export default function PricingCards({ plans, user }: PricingCardsProps) {

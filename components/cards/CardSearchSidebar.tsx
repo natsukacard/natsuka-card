@@ -30,8 +30,8 @@ import { useEffect, useMemo, useState } from 'react';
 interface CardSearchSidebarProps {
   opened: boolean;
   onClose: () => void;
-  onCardSelect: (cardId: string) => void;
   onCardClick?: (card: SearchResult) => void;
+  onCardSelect?: (pokemonCardId: string) => void;
 }
 
 type SearchResult = {
@@ -49,9 +49,11 @@ type SearchResult = {
 function SearchResultCard({
   card,
   onCardClick,
+  onCardSelect,
 }: {
   card: SearchResult;
   onCardClick?: (card: SearchResult) => void;
+  onCardSelect?: (pokemonCardId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -78,6 +80,7 @@ function SearchResultCard({
   const handleClick = () => {
     if (!isDragging) {
       onCardClick?.(card);
+      onCardSelect?.(card.id);
     }
   };
 
@@ -139,8 +142,8 @@ function SearchResultCard({
 export function CardSearchSidebar({
   opened,
   onClose,
-  onCardSelect,
   onCardClick,
+  onCardSelect,
 }: CardSearchSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
@@ -386,6 +389,7 @@ export function CardSearchSidebar({
                   key={`${card.id}-${index}-${currentPage}`}
                   card={card}
                   onCardClick={onCardClick}
+                  onCardSelect={onCardSelect}
                 />
               ))}
             </SimpleGrid>
