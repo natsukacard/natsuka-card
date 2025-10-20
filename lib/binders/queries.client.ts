@@ -417,33 +417,27 @@ export const getUserProfile = async (userId: string) => {
   console.log('getUserProfile called with userId:', userId);
 
   // Get the current authenticated user
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-
-  console.log('Current user ID:', currentUser?.id);
-  console.log('Requested user ID:', userId);
-  console.log('Are they the same?', currentUser?.id === userId);
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
 
   // If the requested userId is the current user, we can access their metadata
-  if (currentUser && currentUser.id === userId) {
+  if (claims && claims.sub === userId) {
     const profile = {
-      id: currentUser.id,
+      id: claims.sub,
       username:
-        currentUser.user_metadata?.username ||
-        currentUser.user_metadata?.name ||
-        currentUser.email?.split('@')[0],
-      avatar_url: currentUser.user_metadata?.avatar_url,
+        claims.user_metadata?.username ||
+        claims.user_metadata?.name ||
+        claims.email?.split('@')[0],
+      avatar_url: claims.user_metadata?.avatar_url,
       is_premium: false,
     };
-    console.log('Returning current user profile:', profile);
     return profile;
   }
 
-  // For other users, check user_profiles table
+  // For other users, check users table
   console.log('Querying user_profiles table for userId:', userId);
   const { data: profile, error: profileError } = await supabase
-    .from('user_profiles')
+    .from('profiles')
     .select('id, username, avatar_url, is_premium')
     .eq('id', userId)
     .single();

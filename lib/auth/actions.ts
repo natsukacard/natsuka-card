@@ -40,8 +40,7 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
     password: credentials.password,
     options: {
       data: {
-        username: credentials.username,
-        display_name: credentials.username,
+        full_name: credentials.username,
       },
     },
   });
