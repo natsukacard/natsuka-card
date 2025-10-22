@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
 import { StripeSync } from '@supabase/stripe-sync-engine';
+import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
@@ -7,7 +7,11 @@ import Stripe from 'stripe';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   const sync = new StripeSync({
     poolConfig: {
       connectionString: process.env.DATABASE_CONNECTION_STRING!,
@@ -36,7 +40,6 @@ export async function POST(request: Request) {
     ) {
       const customer = event.data.object as Stripe.Customer;
 
-      // Update customer creation/update events
       if (customer.email) {
         const { error } = await supabase
           .from('users')
@@ -52,6 +55,7 @@ export async function POST(request: Request) {
         }
       }
     }
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
@@ -71,7 +75,6 @@ export async function POST(request: Request) {
       }
     }
   } catch (error) {
-    // Handle unhandled webhook events gracefully
     if (error instanceof Error && error.message === 'Unhandled webhook event') {
       const event = JSON.parse(body);
       return NextResponse.json({
