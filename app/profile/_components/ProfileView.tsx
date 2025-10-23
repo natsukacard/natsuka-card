@@ -30,13 +30,13 @@ export function ProfileView() {
   };
 
   const getUserDisplayName = () => {
-    if (!user) return 'my binders';
+    if (!user) return 'my';
 
     return (
       user.user_metadata?.username ||
       user.user_metadata?.name ||
       user.email?.split('@')[0] ||
-      'my binders'
+      'my'
     );
   };
 
