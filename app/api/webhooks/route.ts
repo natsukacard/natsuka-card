@@ -67,6 +67,7 @@ async function processWebhookEvent(body: string, signature: string) {
       customer: session.customer,
       email: session.customer_email,
       subscription: session.subscription,
+      mode: session.mode,
     });
 
     if (session.customer && session.customer_email) {
@@ -82,15 +83,31 @@ async function processWebhookEvent(body: string, signature: string) {
         console.log('✅ Updated user:', data);
       }
 
-      // Check if subscription was created
+      // Check if subscription was created in DB
       const { data: subData, error: subError } = await supabase
         .from('stripe.subscriptions')
         .select('*')
         .eq('customer', session.customer)
         .single();
 
-      console.log('🔍 Subscription check:', { subData, subError });
+      console.log('🔍 Subscription check:', {
+        found: !!subData,
+        error: subError?.message,
+        sessionMode: session.mode,
+        subscriptionId: session.subscription,
+      });
     }
+  }
+
+  // Add logging for subscription events
+  if (event.type.startsWith('customer.subscription.')) {
+    console.log('💳 Subscription event received:', event.type);
+    const subscription = event.data.object as Stripe.Subscription;
+    console.log('Subscription details:', {
+      id: subscription.id,
+      customer: subscription.customer,
+      status: subscription.status,
+    });
   }
 }
 
