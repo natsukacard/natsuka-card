@@ -109,6 +109,49 @@ async function processWebhookEvent(body: string, signature: string) {
       status: subscription.status,
     });
   }
+
+  if (event.type.startsWith('customer.')) {
+    const customer = event.data.object as Stripe.Customer;
+
+    const email =
+      customer.email ??
+      (customer.metadata?.user_email as string | undefined) ??
+      (await supabase
+        .from('stripe.customers')
+        .select('email')
+        .eq('id', customer.id)
+        .maybeSingle()
+        .then((r) => r.data?.email));
+
+    if (!email) {
+      console.log('ℹ️ No email found for customer', customer.id);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update({ stripe_customer_id: customer.id })
+      .eq('email', email);
+
+    if (error) console.error('❌ Failed to sync customer', error);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const email =
+      session.customer_email ??
+      session.customer_details?.email ??
+      (session.metadata?.user_email as string | undefined);
+
+    if (!session.customer || !email) return;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ stripe_customer_id: session.customer as string })
+      .eq('email', email);
+
+    if (error) console.error('❌ Failed to sync session customer', error);
+  }
 }
 
 export async function POST(request: Request) {
