@@ -6,13 +6,15 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-async function processWebhookEvent(body: string, signature: string) {
+async function processWebhookEvent(
+  event: Stripe.Event,
+  body: string,
+  signature: string
+) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-
-  console.log('🔄 Processing webhook with StripeSync...');
 
   const sync = new StripeSync({
     poolConfig: {
@@ -24,174 +26,117 @@ async function processWebhookEvent(body: string, signature: string) {
     schema: 'stripe',
   });
 
-  try {
-    await sync.processWebhook(body, signature);
-    console.log('✅ StripeSync processed webhook successfully');
-  } catch (error) {
-    console.error('❌ StripeSync error:', error);
-  }
-
-  const event = stripe.webhooks.constructEvent(
-    body,
-    signature,
-    process.env.STRIPE_WEBHOOK_SECRET!
-  );
-
-  console.log('📨 Webhook event type:', event.type);
-
-  if (event.type === 'customer.created' || event.type === 'customer.updated') {
-    const customer = event.data.object as Stripe.Customer;
-    console.log('👤 Customer event:', {
-      id: customer.id,
-      email: customer.email,
-    });
-
-    if (customer.email) {
-      const { error, data } = await supabase
-        .from('users')
-        .update({ stripe_customer_id: customer.id })
-        .eq('email', customer.email)
-        .select();
-
-      if (error) {
-        console.error('❌ Error updating user with Stripe customer ID:', error);
-      } else {
-        console.log('✅ Updated user with Stripe customer ID:', data);
-      }
-    }
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    console.log('🛒 Checkout completed:', {
-      customer: session.customer,
-      email: session.customer_email,
-      subscription: session.subscription,
-      mode: session.mode,
-    });
-
-    if (session.customer && session.customer_email) {
-      const { error, data } = await supabase
-        .from('users')
-        .update({ stripe_customer_id: session.customer as string })
-        .eq('email', session.customer_email)
-        .select();
-
-      if (error) {
-        console.error('❌ Error updating user:', error);
-      } else {
-        console.log('✅ Updated user:', data);
-      }
-
-      // Check if subscription was created in DB
-      const { data: subData, error: subError } = await supabase
-        .from('stripe.subscriptions')
-        .select('*')
-        .eq('customer', session.customer)
-        .single();
-
-      console.log('🔍 Subscription check:', {
-        found: !!subData,
-        error: subError?.message,
-        sessionMode: session.mode,
-        subscriptionId: session.subscription,
-      });
-    }
-  }
-
-  // Add logging for subscription events
-  if (event.type.startsWith('customer.subscription.')) {
-    console.log('💳 Subscription event received:', event.type);
-    const subscription = event.data.object as Stripe.Subscription;
-    console.log('Subscription details:', {
-      id: subscription.id,
-      customer: subscription.customer,
-      status: subscription.status,
-    });
-  }
+  await sync.processWebhook(body, signature);
 
   if (event.type.startsWith('customer.')) {
     const customer = event.data.object as Stripe.Customer;
 
-    const email =
-      customer.email ??
-      (customer.metadata?.user_email as string | undefined) ??
-      (await supabase
-        .from('stripe.customers')
-        .select('email')
-        .eq('id', customer.id)
-        .maybeSingle()
-        .then((r) => r.data?.email));
+    let email =
+      customer.email ?? (customer.metadata?.user_email as string | undefined);
 
     if (!email) {
-      console.log('ℹ️ No email found for customer', customer.id);
-      return;
+      const { data, error } = await supabase
+        .schema('stripe')
+        .from('customers')
+        .select('email')
+        .eq('id', customer.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Failed to fetch email for customer', {
+          customerId: customer.id,
+          error,
+        });
+      }
+      email = data?.email ?? undefined;
     }
 
-    const { error } = await supabase
-      .from('users')
-      .update({ stripe_customer_id: customer.id })
-      .eq('email', email);
+    if (email) {
+      const { error } = await supabase
+        .from('users')
+        .update({ stripe_customer_id: customer.id })
+        .eq('email', email);
 
-    if (error) console.error('❌ Failed to sync customer', error);
+      if (error) {
+        console.error('❌ Failed to sync customer to users', {
+          customerId: customer.id,
+          email,
+          error,
+        });
+      } else {
+        console.log('✅ Synced customer to users', {
+          customerId: customer.id,
+          email,
+        });
+      }
+    } else {
+      console.log('ℹ️ Skipped customer sync; no email available', {
+        customerId: customer.id,
+      });
+    }
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
+
     const email =
       session.customer_email ??
       session.customer_details?.email ??
       (session.metadata?.user_email as string | undefined);
 
-    if (!session.customer || !email) return;
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : undefined;
 
-    const { error } = await supabase
-      .from('users')
-      .update({ stripe_customer_id: session.customer as string })
-      .eq('email', email);
+    if (customerId && email) {
+      const { error } = await supabase
+        .from('users')
+        .update({ stripe_customer_id: customerId })
+        .eq('email', email);
 
-    if (error) console.error('❌ Failed to sync session customer', error);
+      if (error) {
+        console.error('❌ Failed to sync checkout session', {
+          customerId,
+          email,
+          error,
+        });
+      } else {
+        console.log('✅ Synced checkout session', { customerId, email });
+      }
+    } else {
+      console.log('ℹ️ Skipped checkout sync; missing customer/email', {
+        customerId,
+        email,
+      });
+    }
   }
 }
 
 export async function POST(request: Request) {
   const body = await request.text();
-  const signature = (await headers()).get('stripe-signature') as string;
-
-  console.log('🎣 Webhook received, signature present:', !!signature);
+  const signature = (await headers()).get('stripe-signature');
 
   if (!signature) {
     return NextResponse.json({ error: 'No signature' }, { status: 400 });
   }
 
+  let event: Stripe.Event;
   try {
-    // Verify the webhook signature first
-    stripe.webhooks.constructEvent(
+    event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-
-    console.log('✅ Webhook signature verified');
-
-    // Return 200 immediately to Stripe
-    const response = NextResponse.json({ received: true });
-
-    // Process webhook asynchronously (don't await)
-    processWebhookEvent(body, signature).catch((error) => {
-      if (
-        error instanceof Error &&
-        error.message === 'Unhandled webhook event'
-      ) {
-        console.log(`Unhandled event type: ${JSON.parse(body).type}`);
-      } else {
-        console.error('❌ Error processing webhook:', error);
-      }
-    });
-
-    return response;
   } catch (error) {
     console.error('❌ Webhook signature verification failed:', error);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
+
+  try {
+    await processWebhookEvent(event, body, signature);
+  } catch (error) {
+    console.error('❌ Error processing webhook:', error);
+    return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
 }
