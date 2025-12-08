@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const PROTECTED_PASSWORD = process.env.SITE_PASSWORD;
+const COOKIE_NAME = 'site-access-token';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { password } = await request.json();
+
+    if (password === PROTECTED_PASSWORD) {
+      const response = NextResponse.json({ success: true });
+
+      response.cookies.set(COOKIE_NAME, password, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+      });
+
+      return response;
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Invalid password' },
+      { status: 401 }
+    );
+  } catch {
+    return NextResponse.json(
+      { success: false, error: 'Invalid request' },
+      { status: 400 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const accessCookie = request.cookies.get(COOKIE_NAME);
+
+  if (accessCookie && accessCookie.value === PROTECTED_PASSWORD) {
+    return NextResponse.json({ hasAccess: true });
+  }
+
+  return NextResponse.json({ hasAccess: false }, { status: 401 });
+}

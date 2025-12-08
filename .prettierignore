@@ -1,0 +1,15 @@
+# Dependency & build folders
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Public and static assets – not source code
+/public/
+static/
+
+# Misc
+coverage/
+*.lock
+*.log
