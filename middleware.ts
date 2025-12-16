@@ -7,6 +7,11 @@ const COOKIE_NAME = 'site-access-token';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip ALL middleware for webhooks - they use Stripe signature verification instead
+  if (pathname.startsWith('/api/webhooks')) {
+    return NextResponse.next();
+  }
+
   if (pathname === '/' || pathname === '/api/verify-password') {
     return await updateSession(request);
   }
@@ -22,6 +27,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/verify-password|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/verify-password|api/webhooks|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

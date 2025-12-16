@@ -1,7 +1,7 @@
 import { CardSearchSidebar } from '@/components/cards/CardSearchSidebar';
 import { ContextMenu } from '@/components/ui/ContextMenu';
 import { useAddCardToBinder } from '@/lib/cards/queries.client';
-import { type Card } from '@/lib/types';
+import { getPreferredPokemonCard, type Card } from '@/lib/types';
 import { useDroppable } from '@dnd-kit/core';
 import { AspectRatio, Box, Image, Paper, Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -175,10 +175,10 @@ export function EmptyCardSlot({
               className="overflow-hidden shadow-md opacity-80 ring-2 ring-green-400 ring-opacity-75"
             >
               <AspectRatio ratio={63 / 88}>
-                {previewCard.pokemon_cards?.image_large ? (
+                {getPreferredPokemonCard(previewCard!)?.image_large ? (
                   <Image
-                    src={previewCard.pokemon_cards.image_large}
-                    alt={previewCard.pokemon_cards.name}
+                    src={getPreferredPokemonCard(previewCard!)?.image_large}
+                    alt={getPreferredPokemonCard(previewCard!)?.name || 'card preview'}
                     fit="contain"
                   />
                 ) : (

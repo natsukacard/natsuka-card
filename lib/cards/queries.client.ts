@@ -115,7 +115,8 @@ export const useAddCardToBinder = () => {
         owned: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        pokemon_cards: null, // Will be filled in after server response
+        pokemon_cards_en: null,
+        pokemon_cards_jp: null,
       };
 
       // Optimistically update by adding the card
@@ -265,10 +266,15 @@ const shiftCardsInBinder = async ({
     throw new Error(binderError.message);
   }
 
-  // Use 'cards' table with pokemon_cards relationship (matching server queries)
+  // Use 'cards' table with pokemon_cards_en/jp relationships
   const { data: cardEntries, error: cardsError } = await supabase
     .from('cards')
-    .select('*, pokemon_cards(*)')
+    .select(
+      `
+      *,
+      pokemon_cards_en(*, pokemon_sets_en(*))
+    `
+    )
     .eq('binder_id', binderId)
     .order('index');
 

@@ -3,6 +3,7 @@ import { BinderSettingsModal } from '@/components/binders/BinderSettingsModal';
 import { CardDetailsModal } from '@/components/cards/CardDetailsModal';
 import { CardSearchSidebar } from '@/components/cards/CardSearchSidebar';
 import {
+  useAddPage,
   useBinder,
   useUpdateCardPositions,
 } from '@/lib/binders/queries.client';
@@ -11,7 +12,7 @@ import {
   useDeleteCardFromBinder,
   useShiftCardsInBinder,
 } from '@/lib/cards/queries.client';
-import { type Card } from '@/lib/types';
+import { getPreferredPokemonCard, type Card } from '@/lib/types';
 import { useSidebarStore } from '@/stores/sidebarStore';
 import {
   DndContext,
@@ -25,6 +26,7 @@ import {
 } from '@dnd-kit/core';
 import {
   Alert,
+  Box,
   AspectRatio,
   Button,
   Container,
@@ -38,7 +40,9 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconSearch, IconSettings } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BinderGrid } from './BinderGrid';
 import { BinderPagination } from './BinderPagination';
 
@@ -92,6 +96,7 @@ export function BinderView({
   ] = useDisclosure(false);
   const [selectedCard, setSelectedCard] = useState<CardDetails | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [viewMode, setViewMode] = useState<'single' | 'double'>('single');
 
   // Add mounted state to prevent hydration mismatch
   useEffect(() => {
@@ -117,11 +122,46 @@ export function BinderView({
     null
   );
 
+  // Edge zone navigation state
+  const edgeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [pendingEdgeNavigation, setPendingEdgeNavigation] = useState<
+    'prev' | 'next' | null
+  >(null);
+  const dragStateRef = useRef<{
+    activeCard: Card | null;
+    activeSearchCard: SearchResult | null;
+  }>({ activeCard: null, activeSearchCard: null });
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { data: binder, isLoading, error } = useBinder(binderId);
   const { mutate: addCard } = useAddCardToBinder();
   const { mutate: reorderCards } = useUpdateCardPositions();
   const { mutate: deleteCard } = useDeleteCardFromBinder();
   const { mutate: shiftCards } = useShiftCardsInBinder();
+  const { mutate: addPage } = useAddPage();
+
+  const navigateToPage = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams);
+      params.set('page', page.toString());
+      router.push(`/binder/${binderId}?${params.toString()}`);
+    },
+    [binderId, router, searchParams]
+  );
+
+  useEffect(() => {
+    dragStateRef.current = { activeCard, activeSearchCard };
+  }, [activeCard, activeSearchCard]);
+
+  useEffect(() => {
+    return () => {
+      if (edgeTimerRef.current) {
+        clearTimeout(edgeTimerRef.current);
+      }
+    };
+  }, []);
 
   // DnD sensors - only initialize on client
   const sensors = useSensors(
@@ -186,8 +226,38 @@ export function BinderView({
 
   const handleDragOver = (event: DragOverEvent) => {
     const { over } = event;
-    if (over && over.id.toString().startsWith('slot-')) {
-      const slotIndex = parseInt(over.id.toString().replace('slot-', ''));
+    const overId = over?.id?.toString() || '';
+
+    if (overId === 'edge-prev' || overId === 'edge-next') {
+      setPreviewSlot(null);
+      const direction = overId === 'edge-prev' ? 'prev' : 'next';
+
+      if (pendingEdgeNavigation !== direction) {
+        if (edgeTimerRef.current) {
+          clearTimeout(edgeTimerRef.current);
+        }
+        setPendingEdgeNavigation(direction);
+
+        edgeTimerRef.current = setTimeout(() => {
+          const targetPage =
+            direction === 'prev' ? currentPage - 1 : currentPage + 1;
+          if (targetPage >= 1 && targetPage <= totalPages) {
+            navigateToPage(targetPage);
+          }
+          setPendingEdgeNavigation(null);
+        }, 400);
+      }
+      return;
+    }
+
+    if (edgeTimerRef.current) {
+      clearTimeout(edgeTimerRef.current);
+      edgeTimerRef.current = null;
+    }
+    setPendingEdgeNavigation(null);
+
+    if (over && overId.startsWith('slot-')) {
+      const slotIndex = parseInt(overId.replace('slot-', ''));
       setPreviewSlot(slotIndex);
     } else {
       setPreviewSlot(null);
@@ -197,17 +267,29 @@ export function BinderView({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
+    if (edgeTimerRef.current) {
+      clearTimeout(edgeTimerRef.current);
+      edgeTimerRef.current = null;
+    }
+    setPendingEdgeNavigation(null);
+
     setIsDragging(false);
     setActiveCard(null);
-    setActiveSearchCard(null); // Clear search card state
+    setActiveSearchCard(null);
     setPreviewSlot(null);
 
     if (!over) return;
 
+    const overId = over.id.toString();
+
+    if (overId === 'edge-prev' || overId === 'edge-next') {
+      return;
+    }
+
     // Handle search result drops
     if (active.data.current?.type === 'search-result') {
       const pokemonCardId = active.data.current.pokemonCardId;
-      const targetSlotIndex = parseInt(over.id.toString().replace('slot-', ''));
+      const targetSlotIndex = parseInt(overId.replace('slot-', ''));
 
       const cards = binder?.cards || [];
       const existingCard = cards.find(
@@ -236,7 +318,7 @@ export function BinderView({
     const activeCard = cards.find((c: Card) => c.id === active.id);
     if (!activeCard) return;
 
-    const targetSlotIndex = parseInt(over.id.toString().replace('slot-', ''));
+    const targetSlotIndex = parseInt(overId.replace('slot-', ''));
     if (activeCard.index === targetSlotIndex) return;
 
     // Create updated cards array with new positions
@@ -362,32 +444,107 @@ export function BinderView({
     );
   };
 
+  const handleAddPage = () => {
+    const newPageNumber = totalPages + 1;
+    const notificationId = `add-page-${Date.now()}`;
+    notifications.show({
+      id: notificationId,
+      title: 'Page added',
+      message: (
+        <Text
+          size="sm"
+          className="cursor-pointer underline"
+          onClick={() => {
+            notifications.hide(notificationId);
+            navigateToPage(newPageNumber);
+          }}
+        >
+          Go to page {newPageNumber}
+        </Text>
+      ),
+      color: 'green',
+      autoClose: 5000,
+    });
+    addPage(
+      { binderId, atEnd: true },
+      {
+        onError: (error) => {
+          notifications.show({
+            title: 'Error',
+            message: error.message || 'Failed to add page',
+            color: 'red',
+          });
+        },
+      }
+    );
+  };
+
+  const handleInsertPage = (page: number, position: 'before' | 'after') => {
+    const targetPage = position === 'before' ? page : page + 1;
+    const notificationId = `insert-page-${Date.now()}`;
+    notifications.show({
+      id: notificationId,
+      title: 'Page inserted',
+      message: (
+        <Text
+          size="sm"
+          className="cursor-pointer underline"
+          onClick={() => {
+            notifications.hide(notificationId);
+            navigateToPage(targetPage);
+          }}
+        >
+          Go to page {targetPage}
+        </Text>
+      ),
+      color: 'green',
+      autoClose: 5000,
+    });
+    addPage(
+      { binderId, atEnd: false, beforePage: targetPage },
+      {
+        onError: (error) => {
+          notifications.show({
+            title: 'Error',
+            message: error.message || 'Failed to insert page',
+            color: 'red',
+          });
+        },
+      }
+    );
+  };
+
+
   const handleCardClick = (card: Card) => {
-    if (card.pokemon_cards) {
-      const pokemonCard = card.pokemon_cards;
-      const releaseDate = pokemonCard.pokemon_sets?.release_date;
-      const year = releaseDate
-        ? new Date(releaseDate).getFullYear()
-        : undefined; // Extract year
-      setSelectedCard({
-        id: card.id,
-        name: pokemonCard.name,
-        image_small: pokemonCard.image_small,
-        image_large: pokemonCard.image_large,
-        set_name: pokemonCard.pokemon_sets?.name || undefined,
-        card_number: pokemonCard.number || undefined,
-        rarity: pokemonCard.rarity || undefined,
-        artist: pokemonCard.artist || undefined,
-        year, // Use computed year
-        tcgplayer_product_id: pokemonCard.tcgplayer_product_id || undefined,
-        pokemon_sets: pokemonCard.pokemon_sets
-          ? {
-              tcgplayer_group_id: pokemonCard.pokemon_sets.tcgplayer_group_id,
-            }
-          : undefined,
-      });
-      openCardDetails();
-    }
+    const pokemonCard = getPreferredPokemonCard(card);
+    if (!pokemonCard) return;
+
+    const resolvedSet =
+      pokemonCard.pokemon_sets ||
+      pokemonCard.pokemon_sets_en ||
+      pokemonCard.pokemon_sets_jp ||
+      null;
+    const releaseDate = resolvedSet?.release_date;
+    const year = releaseDate ? new Date(releaseDate).getFullYear() : undefined;
+
+    setSelectedCard({
+      id: card.id,
+      name: pokemonCard.name,
+      image_small: pokemonCard.image_small,
+      image_large: pokemonCard.image_large,
+      set_name: resolvedSet?.name || undefined,
+      card_number: pokemonCard.number || undefined,
+      rarity: pokemonCard.rarity || undefined,
+      artist: pokemonCard.artist || undefined,
+      year,
+      tcgplayer_product_id: pokemonCard.tcgplayer_product_id || undefined,
+      pokemon_sets: resolvedSet
+        ? {
+            tcgplayer_group_id: resolvedSet.tcgplayer_group_id,
+          }
+        : undefined,
+    });
+    openCardDetails();
   };
 
   const handleSearchCardClick = (card: SearchResult) => {
@@ -412,6 +569,19 @@ export function BinderView({
     (binder?.page_rows * binder?.page_columns * binder?.total_pages || 0) /
       cardsPerPage
   );
+  const displayedPages =
+    viewMode === 'double'
+      ? [currentPage, currentPage + 1].filter(
+          (page, index, arr) =>
+            page >= 1 &&
+            page <= Math.max(totalPages, currentPage) &&
+            arr.indexOf(page) === index
+        )
+      : [currentPage];
+  const pageLabel =
+    viewMode === 'double' && displayedPages.length > 1
+      ? `pages ${displayedPages.join(' & ')}`
+      : `page ${displayedPages[0]}`;
 
   if (isLoading) {
     return (
@@ -449,25 +619,33 @@ export function BinderView({
           <div>
             <Title order={2}>{binder.name}</Title>
             <Text c="dimmed">
-              {binder.cards?.length || 0} cards | page {currentPage}
+              {binder.cards?.length || 0} cards | {pageLabel}
             </Text>
           </div>
         </Group>
 
         {/* Render static grid without DnD until mounted */}
-        <BinderGrid
-          binder={binder}
-          currentPage={currentPage}
-          isOwner={false} // Disable interactions until mounted
-          onSlotClick={() => {}}
-          isDragging={false}
-          activeCard={null}
-          previewSlot={null}
-          onDeleteCard={undefined}
-          onInsertBefore={undefined}
-          onInsertAfter={undefined}
-          onDeleteEmptySlot={undefined}
-        />
+        <Box
+          style={{
+            width: '100vw',
+            marginLeft: 'calc(50% - 50vw)',
+            padding: '0 16px',
+          }}
+        >
+          <BinderGrid
+            binder={binder}
+            pages={displayedPages}
+            isOwner={false} // Disable interactions until mounted
+            onSlotClick={() => {}}
+            isDragging={false}
+            activeCard={null}
+            previewSlot={null}
+            onDeleteCard={undefined}
+            onInsertBefore={undefined}
+            onInsertAfter={undefined}
+            onDeleteEmptySlot={undefined}
+          />
+        </Box>
       </Container>
     );
   }
@@ -478,10 +656,16 @@ export function BinderView({
         <div>
           <Title order={2}>{binder.name}</Title>
           <Text c="dimmed">
-            {binder.cards?.length || 0} cards | page {currentPage}
+            {binder.cards?.length || 0} cards | {pageLabel}
           </Text>
         </div>
         <Group>
+          <Button
+            variant={viewMode === 'single' ? 'filled' : 'light'}
+            onClick={() => setViewMode((mode) => (mode === 'single' ? 'double' : 'single'))}
+          >
+            {viewMode === 'single' ? 'Single page' : 'Double page'}
+          </Button>
           {isOwner && ( // Add this condition
             <Button
               leftSection={<IconSearch size={16} />}
@@ -489,6 +673,15 @@ export function BinderView({
               onClick={openSearch}
             >
               add cards
+            </Button>
+          )}
+          {isOwner && (
+            <Button
+              variant="light"
+              component={Link}
+              href={`/binder/${binderId}/pages`}
+            >
+              reorder pages
             </Button>
           )}
           {isOwner && (
@@ -509,20 +702,29 @@ export function BinderView({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <BinderGrid
-          binder={binder}
-          currentPage={currentPage}
-          isOwner={isOwner}
-          onSlotClick={handleSlotClick}
-          isDragging={isDragging}
-          activeCard={activeCard}
-          previewSlot={previewSlot}
-          onDeleteCard={handleDeleteCard}
-          onInsertBefore={handleInsertEmptySlot}
-          onInsertAfter={handleInsertEmptySlot}
-          onDeleteEmptySlot={handleDeleteEmptySlot}
-          onCardClick={handleCardClick}
-        />
+        <Box
+          style={{
+            width: '100vw',
+            marginLeft: 'calc(50% - 50vw)',
+            padding: '0 16px',
+          }}
+        >
+          <BinderGrid
+            binder={binder}
+            pages={displayedPages}
+            isOwner={isOwner}
+            onSlotClick={handleSlotClick}
+            isDragging={isDragging}
+            activeCard={activeCard}
+            previewSlot={previewSlot}
+            onDeleteCard={handleDeleteCard}
+            onInsertBefore={handleInsertEmptySlot}
+            onInsertAfter={handleInsertEmptySlot}
+            onDeleteEmptySlot={handleDeleteEmptySlot}
+            onCardClick={handleCardClick}
+            totalPages={totalPages}
+          />
+        </Box>
 
         {/* Add the pagination component here */}
         <BinderPagination
@@ -531,6 +733,9 @@ export function BinderView({
           totalPages={totalPages}
           cardsPerPage={cardsPerPage}
           totalCards={totalCards}
+          isOwner={isOwner}
+          onAddPage={handleAddPage}
+          onInsertPage={handleInsertPage}
         />
 
         <DragOverlay>
@@ -541,10 +746,10 @@ export function BinderView({
               style={{ transform: 'rotate(5deg)' }}
             >
               <AspectRatio ratio={63 / 88}>
-                {activeCard.pokemon_cards?.image_large ? (
+                {getPreferredPokemonCard(activeCard)?.image_large ? (
                   <Image
-                    src={activeCard.pokemon_cards.image_large}
-                    alt={activeCard.pokemon_cards.name}
+                    src={getPreferredPokemonCard(activeCard)?.image_large as string}
+                    alt={getPreferredPokemonCard(activeCard)?.name || 'card image'}
                     fit="contain"
                   />
                 ) : (

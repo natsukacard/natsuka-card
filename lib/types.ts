@@ -1,23 +1,42 @@
+type PokemonSetBase = {
+  id: string;
+  name: string;
+  tcgplayer_group_id?: number | null;
+  release_date?: string | null;
+};
+
+type PokemonCardBase = {
+  id: string;
+  name: string;
+  image_small: string | null;
+  image_large: string | null;
+  number?: string | null;
+  rarity?: string | null;
+  artist?: string | null;
+  pokemon_sets?: PokemonSetBase | null;
+  pokemon_sets_en?: PokemonSetBase | null;
+  pokemon_sets_jp?: PokemonSetBase | null;
+  tcgplayer_product_id?: number | null;
+};
+
+export type PokemonCardEn = PokemonCardBase;
+export type PokemonCardJp = PokemonCardBase;
+
 export type Card = {
   id: string;
   index: number;
-  pokemon_cards: {
-    id: string;
-    name: string;
-    image_small: string | null;
-    image_large: string | null;
-    number?: string | null;
-    rarity?: string | null;
-    artist?: string | null;
+  quantity?: number;
+  condition?: string | null;
+  graded?: boolean | null;
+  owned?: boolean | null;
+  notes?: string | null;
+  binder_id?: string;
+  pokemon_cards_en?: PokemonCardEn | null;
+  pokemon_cards_jp?: PokemonCardJp | null;
+};
 
-    pokemon_sets?: {
-      name: string;
-      id: string;
-      tcgplayer_group_id?: number | null;
-      release_date?: string | null;
-    } | null;
-    tcgplayer_product_id?: number | null;
-  } | null;
+export const getPreferredPokemonCard = (card: Card) => {
+  return card.pokemon_cards_en ?? card.pokemon_cards_jp ?? null;
 };
 
 export type Binder = {

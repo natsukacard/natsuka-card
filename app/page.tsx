@@ -18,11 +18,10 @@ import {
   Title,
 } from '@mantine/core';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
-export default function Page() {
+function LandingPageContent() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -38,28 +37,23 @@ export default function Page() {
   };
 
   const handlePasswordSuccess = () => {
-    setHasAccess(true);
     setShowPasswordPrompt(false);
     router.replace('/', undefined);
   };
 
   const handleLinkClick = async (href: string) => {
-    // Check if user already has access by trying to verify the cookie
     try {
-      const response = await fetch('/api/verify-access', {
+      const response = await fetch('/api/verify-password', {
         method: 'GET',
         credentials: 'include',
       });
 
       if (response.ok) {
-        // User has access, navigate directly
         router.push(href);
       } else {
-        // User doesn't have access, show password prompt
         setShowPasswordPrompt(true);
       }
-    } catch (error) {
-      // On error, show password prompt
+    } catch {
       setShowPasswordPrompt(true);
     }
   };
@@ -127,7 +121,7 @@ export default function Page() {
                   Everything you need to manage your collection
                 </Title>
                 <Text size="lg" c="dimmed" ta="center" maw={600}>
-                  From inventory tracking to market analysis, we've got you
+                  From inventory tracking to market analysis, we&apos;ve got you
                   covered.
                 </Text>
               </Stack>
@@ -191,5 +185,13 @@ export default function Page() {
         onSuccess={handlePasswordSuccess}
       />
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LandingPageContent />
+    </Suspense>
   );
 }

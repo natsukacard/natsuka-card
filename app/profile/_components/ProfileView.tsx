@@ -1,7 +1,9 @@
 'use client';
 import { CreateBinderModal } from '@/components/binders/CreateBinderModal';
+import { useIsUserPro, useUser } from '@/lib/auth/queries';
 import { useBinders, useUpdateBinderOrder } from '@/lib/binders/queries.client';
 import {
+  Badge,
   Button,
   Container,
   Group,
@@ -16,6 +18,8 @@ import { BindersList } from './BinderList';
 
 export function ProfileView() {
   const { data: binders, isLoading, error } = useBinders();
+  const { data: user, isLoading: userLoading } = useUser();
+  const { data: isUserPro, isLoading: isProLoading } = useIsUserPro();
   const [opened, { open, close }] = useDisclosure(false);
   const { mutate: reorderBinders } = useUpdateBinderOrder();
 
@@ -25,7 +29,18 @@ export function ProfileView() {
     reorderBinders({ binders: updatedBinders });
   };
 
-  if (isLoading) {
+  const getUserDisplayName = () => {
+    if (!user) return 'my';
+
+    return (
+      user.user_metadata?.username ||
+      user.user_metadata?.name ||
+      user.email?.split('@')[0] ||
+      'my'
+    );
+  };
+
+  if (isLoading || userLoading) {
     return (
       <Container size="md" my="lg">
         <Skeleton height={40} width={200} mb="xl" />
@@ -52,9 +67,22 @@ export function ProfileView() {
       <Container size="md" my="lg">
         <Group justify="space-between" mb="xl">
           <div>
-            <Title order={2} fz={{ base: 24, sm: 28 }}>
-              my binders
-            </Title>
+            <Group gap="sm" align="center">
+              <Title order={2} fz={{ base: 24, sm: 28 }}>
+                {getUserDisplayName()}&apos;s binders
+              </Title>
+              {!isProLoading && isUserPro && (
+                <Badge
+                  variant="gradient"
+                  gradient={{ from: 'orange', to: 'red' }}
+                  size="sm"
+                  radius="xl"
+                  style={{ textTransform: 'none' }}
+                >
+                  pro
+                </Badge>
+              )}
+            </Group>
             <Text c="dimmed" fz={{ base: 'sm', sm: 'md' }}>
               manage your binders and cards
             </Text>

@@ -9,11 +9,10 @@ export async function PATCH(
     const supabase = await createClient();
 
     // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const { data } = await supabase.auth.getClaims();
+    const claims = data?.claims;
+
+    if (!claims?.sub) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -24,7 +23,7 @@ export async function PATCH(
     const { data: binders, error: fetchError } = await supabase
       .from('binders')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', claims.sub)
       .order('order', { ascending: true });
 
     if (fetchError) {

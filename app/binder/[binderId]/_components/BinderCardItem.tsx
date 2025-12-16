@@ -1,6 +1,6 @@
 'use client';
 import { ContextMenu } from '@/components/ui/ContextMenu';
-import { type Card } from '@/lib/types';
+import { getPreferredPokemonCard, type Card } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { AspectRatio, Image, Paper, Text } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -30,7 +30,7 @@ export function BinderCardItem({
   onInsertAfter,
   onCardClick,
 }: BinderCardItemProps) {
-  const cardData = card.pokemon_cards;
+  const cardData = getPreferredPokemonCard(card);
 
   const {
     attributes,
@@ -160,10 +160,10 @@ export function BinderCardItem({
           className="absolute inset-0 overflow-hidden shadow-sm border-2 border-blue-300"
         >
           <AspectRatio ratio={63 / 88}>
-            {previewCard.pokemon_cards?.image_large ? (
+            {getPreferredPokemonCard(previewCard)?.image_large ? (
               <Image
-                src={previewCard.pokemon_cards.image_large}
-                alt={previewCard.pokemon_cards.name}
+                src={getPreferredPokemonCard(previewCard)?.image_large}
+                alt={getPreferredPokemonCard(previewCard)?.name || 'card preview'}
                 fit="contain"
                 className="opacity-80"
               />

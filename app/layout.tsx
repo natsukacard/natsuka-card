@@ -4,6 +4,7 @@ import { Footer } from '@/components/ui/Footer';
 import { NavBar } from '@/components/ui/NavBar';
 import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import { ContextMenuProvider } from 'mantine-contextmenu';
 import type { Metadata } from 'next';
 import { Geist_Mono, Outfit } from 'next/font/google';

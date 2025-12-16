@@ -15,7 +15,7 @@ type SignUpCredentials = {
 
 /*
  * Signs in a user with email and password
- * On success, invalidates the 'user' query to refetch the session
+ * On success, invalidates the 'auth-user' query to refetch the session
  */
 export const signInWithPassword = async (credentials: SignInCredentials) => {
   const supabase = createClient();
@@ -25,7 +25,8 @@ export const signInWithPassword = async (credentials: SignInCredentials) => {
     throw new Error(error.message);
   }
 
-  await queryClient.invalidateQueries({ queryKey: ['user'] });
+  await queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+  await queryClient.invalidateQueries({ queryKey: ['auth-user-pro-status'] });
   return data.user;
 };
 
@@ -40,8 +41,7 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
     password: credentials.password,
     options: {
       data: {
-        username: credentials.username,
-        display_name: credentials.username,
+        full_name: credentials.username,
       },
     },
   });
@@ -74,7 +74,7 @@ export const updatePassword = async ({ password }: { password: string }) => {
 
   if (error) throw new Error(error.message);
 
-  await queryClient.invalidateQueries({ queryKey: ['user'] });
+  await queryClient.invalidateQueries({ queryKey: ['auth-user'] });
 };
 
 /**
@@ -96,7 +96,7 @@ export const signInWithGoogle = async () => {
 
 /**
  * Signs out current user
- * Invalidates the 'user' query to refetch the session
+ * Invalidates the 'auth-user' query to refetch the session
  */
 export const signOut = async () => {
   const supabase = createClient();
@@ -107,5 +107,6 @@ export const signOut = async () => {
     throw new Error(error.message);
   }
 
-  await queryClient.invalidateQueries({ queryKey: ['user'] });
+  await queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+  await queryClient.invalidateQueries({ queryKey: ['auth-user-pro-status'] });
 };

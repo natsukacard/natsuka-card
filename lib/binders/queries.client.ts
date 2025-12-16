@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { Binder, QueryResult } from '@/lib/types';
+import { Binder, QueryResult, type Card } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Binder types
@@ -147,7 +147,7 @@ export const getBinderById = async (binderId: string) => {
     throw new Error(binderError.message);
   }
 
-  // Get cards with pokemon_cards data - fix the relationship name
+  // Get cards with english/japanese relationships
   const { data: cards, error: cardsError } = await supabase
     .from('cards')
     .select(
@@ -159,7 +159,7 @@ export const getBinderById = async (binderId: string) => {
       graded,
       owned,
       notes,
-      pokemon_cards(
+      pokemon_cards_en(
         id,
         name,
         image_small,
@@ -167,7 +167,7 @@ export const getBinderById = async (binderId: string) => {
         number,
         artist,
         rarity,
-        pokemon_sets(name, id, tcgplayer_group_id)
+        pokemon_sets_en(name, id, release_date)
       )
     `
     )
@@ -417,33 +417,27 @@ export const getUserProfile = async (userId: string) => {
   console.log('getUserProfile called with userId:', userId);
 
   // Get the current authenticated user
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-
-  console.log('Current user ID:', currentUser?.id);
-  console.log('Requested user ID:', userId);
-  console.log('Are they the same?', currentUser?.id === userId);
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
 
   // If the requested userId is the current user, we can access their metadata
-  if (currentUser && currentUser.id === userId) {
+  if (claims && claims.sub === userId) {
     const profile = {
-      id: currentUser.id,
+      id: claims.sub,
       username:
-        currentUser.user_metadata?.username ||
-        currentUser.user_metadata?.name ||
-        currentUser.email?.split('@')[0],
-      avatar_url: currentUser.user_metadata?.avatar_url,
+        claims.user_metadata?.username ||
+        claims.user_metadata?.name ||
+        claims.email?.split('@')[0],
+      avatar_url: claims.user_metadata?.avatar_url,
       is_premium: false,
     };
-    console.log('Returning current user profile:', profile);
     return profile;
   }
 
-  // For other users, check user_profiles table
+  // For other users, check users table
   console.log('Querying user_profiles table for userId:', userId);
   const { data: profile, error: profileError } = await supabase
-    .from('user_profiles')
+    .from('profiles')
     .select('id, username, avatar_url, is_premium')
     .eq('id', userId)
     .single();
@@ -487,3 +481,220 @@ export function useUserProfile(userId: string) {
     enabled: !!userId,
   });
 }
+
+const reorderBinderPages = async ({
+  binderId,
+  sourcePage,
+  targetPage,
+}: {
+  binderId: string;
+  sourcePage: number;
+  targetPage: number;
+}) => {
+  const response = await fetch(`/api/binders/${binderId}/reorder-pages`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sourcePage, targetPage }),
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Failed to reorder pages');
+  }
+
+  return payload;
+};
+
+const reorderCardsByPage = (
+  cards: Card[],
+  cardsPerPage: number,
+  sourcePage: number,
+  targetPage: number
+) => {
+  if (sourcePage === targetPage) return cards;
+
+  const sourceStart = (sourcePage - 1) * cardsPerPage;
+  const sourceEnd = sourceStart + cardsPerPage - 1;
+  const targetStart = (targetPage - 1) * cardsPerPage;
+  const movingForward = targetStart > sourceStart;
+  const adjustedTargetStart = movingForward
+    ? targetStart - cardsPerPage
+    : targetStart;
+
+  return cards
+    .map((card) => {
+      const idx = card.index;
+
+      if (idx >= sourceStart && idx <= sourceEnd) {
+        return { ...card, index: adjustedTargetStart + (idx - sourceStart) };
+      }
+
+      if (movingForward && idx > sourceEnd && idx < targetStart) {
+        return { ...card, index: idx - cardsPerPage };
+      }
+
+      if (!movingForward && idx >= targetStart && idx < sourceStart) {
+        return { ...card, index: idx + cardsPerPage };
+      }
+
+      return card;
+    })
+    .sort((a, b) => a.index - b.index);
+};
+
+export const useReorderBinderPages = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: reorderBinderPages,
+    onMutate: async ({ binderId, sourcePage, targetPage }) => {
+      await queryClient.cancelQueries({ queryKey: ['binder', binderId] });
+
+      const previousBinder = queryClient.getQueryData(['binder', binderId]);
+
+      queryClient.setQueryData(
+        ['binder', binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
+
+          const cardsPerPage = old.page_rows * old.page_columns;
+
+          return {
+            ...old,
+            cards: reorderCardsByPage(
+              old.cards || [],
+              cardsPerPage,
+              sourcePage,
+              targetPage
+            ),
+          };
+        }
+      );
+
+      return { previousBinder };
+    },
+    onError: (error, variables, context) => {
+      if (context?.previousBinder) {
+        queryClient.setQueryData(
+          ['binder', variables.binderId],
+          context.previousBinder
+        );
+      }
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['binder', variables.binderId],
+      });
+    },
+  });
+};
+
+const addPageToBinder = async ({
+  binderId,
+  atEnd = true,
+  beforePage,
+}: {
+  binderId: string;
+  atEnd?: boolean;
+  beforePage?: number;
+}) => {
+  const supabase = createClient();
+
+  const { data: binder, error: binderError } = await supabase
+    .from('binders')
+    .select('*')
+    .eq('id', binderId)
+    .single();
+
+  if (binderError) throw new Error(binderError.message);
+
+  const cardsPerPage = binder.page_rows * binder.page_columns;
+
+  if (!atEnd && beforePage !== undefined) {
+    const { data: cards, error: cardsError } = await supabase
+      .from('cards')
+      .select('id, index')
+      .eq('binder_id', binderId)
+      .gte('index', (beforePage - 1) * cardsPerPage)
+      .order('index', { ascending: false });
+
+    if (cardsError) throw new Error(cardsError.message);
+
+    for (const card of cards || []) {
+      const { error: updateError } = await supabase
+        .from('cards')
+        .update({ index: card.index + cardsPerPage })
+        .eq('id', card.id);
+
+      if (updateError) throw new Error(updateError.message);
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('binders')
+    .update({ total_pages: binder.total_pages + 1 })
+    .eq('id', binderId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const useAddPage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: addPageToBinder,
+    onMutate: async ({ binderId, atEnd, beforePage }) => {
+      await queryClient.cancelQueries({ queryKey: ['binder', binderId] });
+
+      const previousBinder = queryClient.getQueryData(['binder', binderId]);
+
+      queryClient.setQueryData(
+        ['binder', binderId],
+        (old: Binder | undefined) => {
+          if (!old) return old;
+
+          const cardsPerPage = old.page_rows * old.page_columns;
+          let updatedCards = old.cards || [];
+
+          if (!atEnd && beforePage !== undefined) {
+            const shiftFromIndex = (beforePage - 1) * cardsPerPage;
+            updatedCards = updatedCards.map((card) => ({
+              ...card,
+              index:
+                card.index >= shiftFromIndex
+                  ? card.index + cardsPerPage
+                  : card.index,
+            }));
+          }
+
+          return {
+            ...old,
+            total_pages: old.total_pages + 1,
+            cards: updatedCards,
+          };
+        }
+      );
+
+      return { previousBinder };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousBinder) {
+        queryClient.setQueryData(
+          ['binder', variables.binderId],
+          context.previousBinder
+        );
+      }
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['binder', variables.binderId],
+      });
+    },
+  });
+};
