@@ -36,12 +36,13 @@ export function EmptyCardSlot({
   const [searchModalOpened, setSearchModalOpened] = useState(false);
   const { mutate: addCard, isPending } = useAddCardToBinder();
 
-  const handleCardSelect = (pokemonCardId: string) => {
+  const handleCardSelect = (pokemonCardId: string, language: 'en' | 'jp' = 'en') => {
     addCard(
       {
         binderId,
         pokemonCardId,
         index: slotIndex,
+        language,
       },
       {
         onSuccess: () => {

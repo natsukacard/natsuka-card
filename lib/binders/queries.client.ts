@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/client';
 import { Binder, QueryResult, type Card } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+export const MAX_BINDERS = 7
+export const MAX_PAGES = 24;
+
 // Binder types
 type CreateBinderValues = {
   name: string;
@@ -147,36 +150,26 @@ export const getBinderById = async (binderId: string) => {
     throw new Error(binderError.message);
   }
 
-  // Get cards with english/japanese relationships
-  const { data: cards, error: cardsError } = await supabase
-    .from('cards')
-    .select(
-      `
-      id,
-      index,
-      quantity,
-      condition,
-      graded,
-      owned,
-      notes,
-      pokemon_cards_en(
-        id,
-        name,
-        image_small,
-        image_large,
-        number,
-        artist,
-        rarity,
-        pokemon_sets_en(name, id, release_date)
-      )
-    `
-    )
-    .eq('binder_id', binderId)
-    .order('index', { ascending: true });
+  const { data: cardsRaw, error: cardsError } = await supabase.rpc(
+    'get_binder_cards',
+    { binder_id_param: binderId }
+  );
 
   if (cardsError) {
     throw new Error(cardsError.message);
   }
+
+  const cards = (cardsRaw || []).map((card: any) => ({
+    id: card.id,
+    index: card.index,
+    quantity: card.quantity,
+    condition: card.condition,
+    graded: card.graded,
+    owned: card.owned,
+    notes: card.notes,
+    pokemon_cards_en: card.language === 'en' ? card.card_data : null,
+    pokemon_cards_jp: card.language === 'jp' ? card.card_data : null,
+  }));
 
   return {
     ...binder,
@@ -218,11 +211,14 @@ const createBinder = async (values: CreateBinderValues) => {
 
   if (!claims || !claims.sub) throw new Error('User not authenticated');
 
-  // Get the current count of binders for this user to set the order
   const { count } = await supabase
     .from('binders')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', claims.sub);
+
+  if (count !== null && count >= MAX_BINDERS) {
+    throw new Error('Maximum 99 binders allowed');
+  }
 
   const { data: newBinder, error } = await supabase
     .from('binders')
@@ -610,6 +606,10 @@ const addPageToBinder = async ({
     .single();
 
   if (binderError) throw new Error(binderError.message);
+
+  if (binder.total_pages >= MAX_PAGES) {
+    throw new Error(`Page limit reached (maximum ${MAX_PAGES} pages)`);
+  }
 
   const cardsPerPage = binder.page_rows * binder.page_columns;
 

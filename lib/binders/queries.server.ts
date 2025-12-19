@@ -19,37 +19,27 @@ export const getBinderByIdServer = async (binderId: string) => {
     throw new Error(binderError.message);
   }
 
-  // Get cards with english/japanese relationships
-  const { data: cards, error: cardsError } = await supabase
-    .from('cards')
-    .select(
-      `
-      id,
-      index,
-      quantity,
-      condition,
-      graded,
-      owned,
-      notes,
-      pokemon_cards_en(
-        id,
-        name,
-        image_small,
-        image_large,
-        number,
-        artist,
-        rarity,
-        pokemon_sets_en(name, id, release_date)
-      )
-    `
-    )
-    .eq('binder_id', binderId)
-    .order('index', { ascending: true });
+  const { data: cardsRaw, error: cardsError } = await supabase.rpc(
+    'get_binder_cards',
+    { binder_id_param: binderId }
+  );
 
   if (cardsError) {
     console.error('Cards query error:', cardsError);
     throw new Error(cardsError.message);
   }
+
+  const cards = (cardsRaw || []).map((card: any) => ({
+    id: card.id,
+    index: card.index,
+    quantity: card.quantity,
+    condition: card.condition,
+    graded: card.graded,
+    owned: card.owned,
+    notes: card.notes,
+    pokemon_cards_en: card.language === 'en' ? card.card_data : null,
+    pokemon_cards_jp: card.language === 'jp' ? card.card_data : null,
+  }));
 
   return {
     ...binder,

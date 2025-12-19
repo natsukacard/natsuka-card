@@ -37,11 +37,13 @@ const PageTile = ({
   page,
   cardCount,
   previewImages,
+  columns,
   onClick,
 }: {
   page: number;
   cardCount: number;
   previewImages: (string | null)[];
+  columns: number;
   onClick: () => void;
 }) => {
   const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -67,9 +69,9 @@ const PageTile = ({
 
   const style = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 5,
-      }
+      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      zIndex: 5,
+    }
     : undefined;
 
   return (
@@ -99,8 +101,8 @@ const PageTile = ({
             {cardCount} cards
           </Text>
         </Group>
-        <SimpleGrid cols={2} spacing={6}>
-          {previewImages.slice(0, 4).map((src, idx) => (
+        <SimpleGrid cols={columns} spacing={6}>
+          {previewImages.map((src, idx) => (
             <AspectRatio key={idx} ratio={63 / 88}>
               {src ? (
                 <img
@@ -243,14 +245,16 @@ export function PagesReorderView({ binderId }: PagesReorderViewProps) {
               key={page}
               page={page}
               cardCount={cards.length}
-              previewImages={cards
-                .slice(0, 4)
-                .map(
-                  (c: BinderCardType) =>
-                    getPreferredPokemonCard(c)?.image_small ||
-                    getPreferredPokemonCard(c)?.image_large ||
-                    null
-                )}
+              columns={binder.page_columns}
+              previewImages={Array.from({ length: cardsPerPage }).map((_, i) => {
+                const slotIndex = (page - 1) * cardsPerPage + i;
+                const card = cards.find((c) => c.index === slotIndex);
+                return card
+                  ? getPreferredPokemonCard(card)?.image_small ||
+                  getPreferredPokemonCard(card)?.image_large ||
+                  null
+                  : null;
+              })}
               onClick={() => notifications.show({
                 title: 'Page selected',
                 message: `Drag to move page ${page}`,

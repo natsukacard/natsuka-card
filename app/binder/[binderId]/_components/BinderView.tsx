@@ -3,6 +3,7 @@ import { BinderSettingsModal } from '@/components/binders/BinderSettingsModal';
 import { CardDetailsModal } from '@/components/cards/CardDetailsModal';
 import { CardSearchSidebar } from '@/components/cards/CardSearchSidebar';
 import {
+  MAX_PAGES,
   useAddPage,
   useBinder,
   useUpdateCardPositions,
@@ -142,6 +143,8 @@ export function BinderView({
   const { mutate: shiftCards } = useShiftCardsInBinder();
   const { mutate: addPage } = useAddPage();
 
+  const isPageLimitReached = binder ? binder.total_pages >= MAX_PAGES : false;
+
   const navigateToPage = useCallback(
     (page: number) => {
       const params = new URLSearchParams(searchParams);
@@ -177,7 +180,7 @@ export function BinderView({
     openSearch();
   };
 
-  const handleCardSelect = (pokemonCardId: string) => {
+  const handleCardSelect = (pokemonCardId: string, language: 'en' | 'jp' = 'en') => {
     if (selectedSlotIndex === null) return;
 
     addCard(
@@ -185,6 +188,7 @@ export function BinderView({
         binderId,
         pokemonCardId,
         index: selectedSlotIndex,
+        language,
       },
       {
         onSuccess: () => {
@@ -289,6 +293,7 @@ export function BinderView({
     // Handle search result drops
     if (active.data.current?.type === 'search-result') {
       const pokemonCardId = active.data.current.pokemonCardId;
+      const language = active.data.current.language || 'en';
       const targetSlotIndex = parseInt(overId.replace('slot-', ''));
 
       const cards = binder?.cards || [];
@@ -309,6 +314,7 @@ export function BinderView({
         binderId,
         pokemonCardId,
         index: targetSlotIndex,
+        language,
       });
       return;
     }
@@ -540,8 +546,8 @@ export function BinderView({
       tcgplayer_product_id: pokemonCard.tcgplayer_product_id || undefined,
       pokemon_sets: resolvedSet
         ? {
-            tcgplayer_group_id: resolvedSet.tcgplayer_group_id,
-          }
+          tcgplayer_group_id: resolvedSet.tcgplayer_group_id,
+        }
         : undefined,
     });
     openCardDetails();
@@ -567,16 +573,16 @@ export function BinderView({
   const totalCards = binder?.cards?.length || 0;
   const totalPages = Math.ceil(
     (binder?.page_rows * binder?.page_columns * binder?.total_pages || 0) /
-      cardsPerPage
+    cardsPerPage
   );
   const displayedPages =
     viewMode === 'double'
       ? [currentPage, currentPage + 1].filter(
-          (page, index, arr) =>
-            page >= 1 &&
-            page <= Math.max(totalPages, currentPage) &&
-            arr.indexOf(page) === index
-        )
+        (page, index, arr) =>
+          page >= 1 &&
+          page <= Math.max(totalPages, currentPage) &&
+          arr.indexOf(page) === index
+      )
       : [currentPage];
   const pageLabel =
     viewMode === 'double' && displayedPages.length > 1
@@ -636,7 +642,7 @@ export function BinderView({
             binder={binder}
             pages={displayedPages}
             isOwner={false} // Disable interactions until mounted
-            onSlotClick={() => {}}
+            onSlotClick={() => { }}
             isDragging={false}
             activeCard={null}
             previewSlot={null}
@@ -736,6 +742,7 @@ export function BinderView({
           isOwner={isOwner}
           onAddPage={handleAddPage}
           onInsertPage={handleInsertPage}
+          isPageLimitReached={isPageLimitReached}
         />
 
         <DragOverlay>
@@ -770,7 +777,7 @@ export function BinderView({
             >
               <AspectRatio ratio={63 / 88}>
                 {activeSearchCard.image_large ||
-                activeSearchCard.image_small ? (
+                  activeSearchCard.image_small ? (
                   <Image
                     src={
                       activeSearchCard.image_large ||
