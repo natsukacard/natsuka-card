@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 const PROTECTED_PASSWORD = process.env.SITE_PASSWORD || 'natsuka-beta-2025';
 const COOKIE_NAME = 'site-access-token';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip ALL middleware for webhooks - they use Stripe signature verification instead

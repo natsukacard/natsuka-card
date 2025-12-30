@@ -248,7 +248,7 @@ export function PagesReorderView({ binderId }: PagesReorderViewProps) {
               columns={binder.page_columns}
               previewImages={Array.from({ length: cardsPerPage }).map((_, i) => {
                 const slotIndex = (page - 1) * cardsPerPage + i;
-                const card = cards.find((c) => c.index === slotIndex);
+                const card = cards.find((c: BinderCardType) => c.index === slotIndex);
                 return card
                   ? getPreferredPokemonCard(card)?.image_small ||
                   getPreferredPokemonCard(card)?.image_large ||
