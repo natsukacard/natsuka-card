@@ -58,6 +58,7 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
  */
 export const requestPasswordReset = async ({ email }: { email: string }) => {
   const supabase = createClient();
+  const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'https://natsukacard.com';
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/reset-password`,
   });
