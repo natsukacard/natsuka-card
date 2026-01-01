@@ -41,7 +41,7 @@
     "zustand": "^5.0.7"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.0.0 <23.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
