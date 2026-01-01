@@ -19,7 +19,7 @@ export async function proxy(request: NextRequest) {
   const accessCookie = request.cookies.get(COOKIE_NAME);
 
   if (!accessCookie || accessCookie.value !== PROTECTED_PASSWORD) {
-    return NextResponse.redirect(new URL('/?protected=true', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return await updateSession(request);
