@@ -18,6 +18,7 @@ import {
   Pagination,
   Paper,
   ScrollArea,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -31,7 +32,7 @@ interface CardSearchSidebarProps {
   opened: boolean;
   onClose: () => void;
   onCardClick?: (card: SearchResult) => void;
-  onCardSelect?: (pokemonCardId: string) => void;
+  onCardSelect?: (pokemonCardId: string, language: 'en' | 'jp') => void;
 }
 
 type SearchResult = {
@@ -50,10 +51,12 @@ function SearchResultCard({
   card,
   onCardClick,
   onCardSelect,
+  language,
 }: {
   card: SearchResult;
   onCardClick?: (card: SearchResult) => void;
-  onCardSelect?: (pokemonCardId: string) => void;
+  onCardSelect?: (pokemonCardId: string, language: 'en' | 'jp') => void;
+  language: 'en' | 'jp';
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -62,25 +65,26 @@ function SearchResultCard({
         type: 'search-result',
         pokemonCardId: card.id,
         card: card,
+        language,
       },
     });
 
   const style = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 1000,
-        cursor: 'grabbing',
-      }
+      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      zIndex: 1000,
+      cursor: 'grabbing',
+    }
     : {
-        cursor: 'grab',
-      };
+      cursor: 'grab',
+    };
 
   const imageUrl = card.image_large || card.image_small;
 
   const handleClick = () => {
     if (!isDragging) {
       onCardClick?.(card);
-      onCardSelect?.(card.id);
+      onCardSelect?.(card.id, language);
     }
   };
 
@@ -92,9 +96,8 @@ function SearchResultCard({
         {...attributes}
         style={style}
         radius="md"
-        className={`overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${
-          isDragging ? 'opacity-50' : ''
-        }`}
+        className={`overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''
+          }`}
         p="xs"
         onClick={handleClick}
       >
@@ -149,9 +152,9 @@ export function CardSearchSidebar({
   const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersOpened, { toggle: toggleFilters }] = useDisclosure(false);
-  const [jumpToPage, setJumpToPage] = useState<number | string>(''); // Added for jump functionality
+  const [jumpToPage, setJumpToPage] = useState<number | string>('');
+  const [language, setLanguage] = useState<'en' | 'jp'>('en');
 
-  // Filter and sort states
   const [filters, setFilters] = useState<SearchFilters>({
     setFilter: undefined,
     rarityFilter: undefined,
@@ -161,7 +164,8 @@ export function CardSearchSidebar({
 
   const { data: searchResults, isLoading } = useSearchPokemonCards(
     debouncedSearchTerm,
-    filters
+    filters,
+    language
   );
 
   const results: SearchResult[] = useMemo(
@@ -293,6 +297,19 @@ export function CardSearchSidebar({
       }}
     >
       <div className="space-y-4 h-full flex flex-col">
+        <SegmentedControl
+          value={language}
+          onChange={(value) => {
+            setLanguage(value as 'en' | 'jp');
+            setCurrentPage(1);
+          }}
+          data={[
+            { label: 'English', value: 'en' },
+            { label: '日本語', value: 'jp' },
+          ]}
+          fullWidth
+        />
+
         <Autocomplete
           label="search by name, set, number, artist, or rarity"
           placeholder="type to search..."
@@ -390,6 +407,7 @@ export function CardSearchSidebar({
                   card={card}
                   onCardClick={onCardClick}
                   onCardSelect={onCardSelect}
+                  language={language}
                 />
               ))}
             </SimpleGrid>

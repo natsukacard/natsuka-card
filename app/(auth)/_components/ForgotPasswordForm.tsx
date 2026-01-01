@@ -41,7 +41,7 @@ export function ForgotPasswordForm() {
   });
 
   const onSubmit = (data: ForgotPasswordFormData) => {
-    mutate(data);
+    mutate({ ...data, origin: window.location.origin });
   };
 
   if (isSuccess) {

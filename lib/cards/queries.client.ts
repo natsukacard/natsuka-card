@@ -21,7 +21,8 @@ interface SearchFilters {
 
 const searchPokemonCards = async (
   searchTerm: string,
-  filters: SearchFilters = {}
+  filters: SearchFilters = {},
+  language: 'en' | 'jp' = 'en'
 ) => {
   if (!searchTerm || searchTerm.trim() === '') {
     return [];
@@ -31,7 +32,8 @@ const searchPokemonCards = async (
 
   console.log('Searching for:', searchTerm, 'with filters:', filters);
 
-  const { data, error } = await supabase.rpc('search_cards', {
+  const rpcFunction = language === 'en' ? 'search_cards' : 'search_cards_jp';
+  const { data, error } = await supabase.rpc(rpcFunction, {
     search_term: searchTerm,
     set_filter: filters.setFilter || null,
     rarity_filter: filters.rarityFilter || null,
@@ -50,11 +52,12 @@ const searchPokemonCards = async (
 
 export const useSearchPokemonCards = (
   searchTerm: string,
-  filters: SearchFilters = {}
+  filters: SearchFilters = {},
+  language: 'en' | 'jp' = 'en'
 ) => {
   return useQuery({
-    queryKey: ['pokemon_card_search', searchTerm, filters],
-    queryFn: () => searchPokemonCards(searchTerm, filters),
+    queryKey: ['pokemon_card_search', searchTerm, filters, language],
+    queryFn: () => searchPokemonCards(searchTerm, filters, language),
     enabled: !!searchTerm.trim() && searchTerm.length >= 1,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -65,14 +68,15 @@ const addCardToBinder = async ({
   binderId,
   pokemonCardId,
   index,
+  language = 'en',
 }: {
   binderId: string;
   pokemonCardId: string;
   index: number;
+  language?: 'en' | 'jp';
 }) => {
   const supabase = createClient();
 
-  // Use 'cards' table to match the server queries
   const { data, error } = await supabase
     .from('cards')
     .insert({
@@ -83,6 +87,7 @@ const addCardToBinder = async ({
       condition: 'near_mint',
       graded: false,
       owned: true,
+      language,
     })
     .select('*')
     .single();

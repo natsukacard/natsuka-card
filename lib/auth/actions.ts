@@ -36,6 +36,7 @@ export const signInWithPassword = async (credentials: SignInCredentials) => {
  */
 export const signUpWithPassword = async (credentials: SignUpCredentials) => {
   const supabase = createClient();
+  const origin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'https://natsukacard.com';
   const { data, error } = await supabase.auth.signUp({
     email: credentials.email,
     password: credentials.password,
@@ -43,6 +44,7 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
       data: {
         full_name: credentials.username,
       },
+      emailRedirectTo: `${origin}/confirm`,
     },
   });
 
@@ -54,10 +56,11 @@ export const signUpWithPassword = async (credentials: SignUpCredentials) => {
 /**
  * Requests a password reset email
  */
-export const requestPasswordReset = async ({ email }: { email: string }) => {
+export const requestPasswordReset = async ({ email, origin }: { email: string; origin?: string }) => {
   const supabase = createClient();
+  const redirectOrigin = origin || process.env.NEXT_PUBLIC_SITE_URL || 'https://natsukacard.com';
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/reset-password`,
+    redirectTo: `${redirectOrigin}/reset-password`,
   });
 
   if (error) throw new Error(error.message);

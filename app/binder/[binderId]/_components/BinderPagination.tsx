@@ -1,4 +1,5 @@
 'use client';
+import { MAX_PAGES } from '@/lib/binders/queries.client';
 import {
   ActionIcon,
   Button,
@@ -29,6 +30,7 @@ interface BinderPaginationProps {
   isOwner?: boolean;
   onAddPage?: () => void;
   onInsertPage?: (page: number, position: 'before' | 'after') => void;
+  isPageLimitReached?: boolean;
 }
 
 function PageButton({
@@ -38,6 +40,7 @@ function PageButton({
   isOwner,
   onInsertBefore,
   onInsertAfter,
+  isPageLimitReached = false,
 }: {
   page: number;
   isActive: boolean;
@@ -45,6 +48,7 @@ function PageButton({
   isOwner: boolean;
   onInsertBefore?: () => void;
   onInsertAfter?: () => void;
+  isPageLimitReached?: boolean;
 }) {
   const [opened, setOpened] = useState(false);
 
@@ -61,7 +65,7 @@ function PageButton({
         <UnstyledButton
           onClick={onClick}
           onContextMenu={(e) => {
-            if (isOwner && onInsertBefore && onInsertAfter) {
+            if (isOwner && onInsertBefore && onInsertAfter && !isPageLimitReached) {
               e.preventDefault();
               setOpened(true);
             }
@@ -94,7 +98,7 @@ function PageButton({
           {page}
         </UnstyledButton>
       </Menu.Target>
-      {isOwner && onInsertBefore && onInsertAfter && (
+      {isOwner && onInsertBefore && onInsertAfter && !isPageLimitReached && (
         <Menu.Dropdown>
           <Menu.Item onClick={onInsertBefore}>Insert page before</Menu.Item>
           <Menu.Item onClick={onInsertAfter}>Insert page after</Menu.Item>
@@ -113,6 +117,7 @@ export function BinderPagination({
   isOwner = false,
   onAddPage,
   onInsertPage,
+  isPageLimitReached = false,
 }: BinderPaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -216,6 +221,7 @@ export function BinderPagination({
               onInsertAfter={
                 onInsertPage ? () => onInsertPage(page, 'after') : undefined
               }
+              isPageLimitReached={isPageLimitReached}
             />
           )
         )}
@@ -240,7 +246,7 @@ export function BinderPagination({
         </ActionIcon>
 
         {isOwner && onAddPage && (
-          <Tooltip label="Add page at end">
+          <Tooltip label={isPageLimitReached ? `Page limit reached (${MAX_PAGES} max)` : "Add page at end"}>
             <ActionIcon
               variant="light"
               color="#6796ec"
@@ -248,6 +254,7 @@ export function BinderPagination({
               onClick={onAddPage}
               radius="sm"
               ml={4}
+              disabled={isPageLimitReached}
             >
               <IconPlus size={16} />
             </ActionIcon>
@@ -292,7 +299,7 @@ export function BinderPagination({
         )}
 
         <Text size="sm" c="dimmed">
-          page {currentPage} of {totalPages}
+          page {currentPage} of {totalPages} {isPageLimitReached && `(max ${MAX_PAGES})`}
         </Text>
       </Group>
     </Stack>
