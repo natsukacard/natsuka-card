@@ -60,7 +60,7 @@ export const requestPasswordReset = async ({ email, origin }: { email: string; o
   const supabase = createClient();
   const redirectOrigin = origin || process.env.NEXT_PUBLIC_SITE_URL || 'https://natsukacard.com';
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${redirectOrigin}/confirm?type=recovery&next=/reset-password`,
+    redirectTo: `${redirectOrigin}/reset-password`,
   });
 
   if (error) throw new Error(error.message);
