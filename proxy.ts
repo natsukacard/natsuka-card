@@ -12,11 +12,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public routes to bypass site password protection
   if (
     pathname === '/' ||
     pathname === '/api/verify-password' ||
     pathname === '/confirm' ||
+    pathname === '/confirm-success' ||
     pathname === '/reset-password' ||
     pathname === '/login' ||
     pathname === '/signup' ||
