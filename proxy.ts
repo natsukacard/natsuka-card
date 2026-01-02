@@ -12,7 +12,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === '/' || pathname === '/api/verify-password') {
+  // Allow public routes to bypass site password protection
+  if (
+    pathname === '/' ||
+    pathname === '/api/verify-password' ||
+    pathname === '/confirm' ||
+    pathname === '/reset-password' ||
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/forgot-password'
+  ) {
     return await updateSession(request);
   }
 
