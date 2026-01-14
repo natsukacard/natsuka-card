@@ -1,0 +1,55 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch: # Manual "Toggle" button in GitHub
+  push:
+    branches:
+      - main # Auto-runs on merge to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # 1. Apply Schema Changes (Excludes internal_roles if not in migrations)
+      - name: Link and Push Schema to Prod
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }} --password ${{ secrets.SUPABASE_DB_PASSWORD_PROD }}
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # 2. Sync Reference Data (Cards, Sets, Prices ONLY)
+      - name: Sync Reference Data (Dev -> Prod)
+        env:
+          DEV_DB: ${{ secrets.SUPABASE_DB_URL_DEV }}
+          PROD_DB: ${{ secrets.SUPABASE_DB_URL_PROD }}
+        run: |
+          # Dump only specific reference tables from Dev
+          pg_dump $DEV_DB \
+            --data-only \
+            --column-inserts \
+            --table=public.pokemon_cards \
+            --table=public.pokemon_sets \
+            --table=public.pokemon_raw_api_cards \
+            --table=public.pokemon_raw_cards_jp \
+            --table=public.pokemon_sets_jp \
+            --table=public.card_prices \
+            > ref_data.sql
+
+          # Restore to Prod (ignoring errors if data exists/duplicates handled by upsert usually)
+          # Note: If you need upsert behavior, use the custom script below instead of simple psql
+          psql $PROD_DB -f ref_data.sql
+
+      # 3. Sync Email Templates
+      - name: Sync Email Templates
+        run: node scripts/sync-email-templates.js
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_ID }}
+          PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
