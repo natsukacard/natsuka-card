@@ -30,24 +30,34 @@ jobs:
           DEV_DB: ${{ secrets.SUPABASE_DB_URL_DEV }}
           PROD_DB: ${{ secrets.SUPABASE_DB_URL_PROD }}
         run: |
-          # 1. Export data from Dev
+          # 1. Export Data from Dev (Using Dev Table Names)
+          # We export 'pokemon_cards_en' and 'pokemon_sets_en' specifically
           pg_dump "$DEV_DB" \
             --data-only \
             --column-inserts \
-            --table=public.pokemon_cards \
-            --table=public.pokemon_sets \
-            --table=public.pokemon_raw_api_cards \
-            --table=public.pokemon_raw_cards_jp \
+            --table=public.pokemon_cards_en \
+            --table=public.pokemon_sets_en \
+            --table=public.pokemon_cards_jp \
             --table=public.pokemon_sets_jp \
             --table=public.card_prices \
-            > ref_data.sql
+            > dev_export.sql
 
-          # 2. Create a "Safe Import" script that disables constraints temporarily
+          # 2. Rename Tables in SQL (Map '_en' -> Standard)
+          # This replaces "public.pokemon_cards_en" with "public.pokemon_cards"
+          sed 's/public.pokemon_cards_en/public.pokemon_cards/g' dev_export.sql > ref_data.sql
+          # This replaces "public.pokemon_sets_en" with "public.pokemon_sets"
+          sed -i 's/public.pokemon_sets_en/public.pokemon_sets/g' ref_data.sql
+
+          # 3. Create Import Script (Disable Constraints + Truncate)
           echo "SET session_replication_role = 'replica';" > import.sql
+          
+          # Truncate tables to ensure a clean slate (avoids duplicates)
+          echo "TRUNCATE TABLE public.pokemon_cards, public.pokemon_sets, public.pokemon_cards_jp, public.pokemon_sets_jp, public.card_prices CASCADE;" >> import.sql
+          
           cat ref_data.sql >> import.sql
           echo "SET session_replication_role = 'origin';" >> import.sql
 
-          # 3. Import to Prod
+          # 4. Import to Prod
           psql "$PROD_DB" -f import.sql
 
       # 3. Sync Email Templates
