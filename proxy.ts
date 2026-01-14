@@ -12,23 +12,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public routes to bypass site password protection
-  if (
-    pathname === '/' ||
-    pathname === '/api/verify-password' ||
-    pathname === '/confirm' ||
-    pathname === '/reset-password' ||
-    pathname === '/login' ||
-    pathname === '/signup' ||
-    pathname === '/forgot-password'
-  ) {
+  if (pathname === '/' || pathname === '/api/verify-password') {
     return await updateSession(request);
   }
 
   const accessCookie = request.cookies.get(COOKIE_NAME);
 
   if (!accessCookie || accessCookie.value !== PROTECTED_PASSWORD) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/?protected=true', request.url));
   }
 
   return await updateSession(request);

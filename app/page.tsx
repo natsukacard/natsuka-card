@@ -22,12 +22,15 @@ import { Suspense, useEffect, useState } from 'react';
 
 function LandingPageContent() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [contentVisible, setContentVisible] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     if (searchParams.get('protected') === 'true') {
       setShowPasswordPrompt(true);
+    } else {
+      setContentVisible(true);
     }
   }, [searchParams]);
 
@@ -38,6 +41,7 @@ function LandingPageContent() {
 
   const handlePasswordSuccess = () => {
     setShowPasswordPrompt(false);
+    setContentVisible(true);
     router.replace('/', undefined);
   };
 
@@ -60,7 +64,7 @@ function LandingPageContent() {
 
   return (
     <>
-      <div className="min-h-screen lowercase">
+      <div className="min-h-screen lowercase" style={{ opacity: contentVisible ? 1 : 0, transition: 'opacity 150ms' }}>
         <section className="relative overflow-hidden py-24">
           <Container size="lg">
             <Stack align="center" gap="xl">

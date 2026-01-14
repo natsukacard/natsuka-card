@@ -19,15 +19,12 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
-      // For password recovery, redirect to reset password page
       if (type === 'recovery') {
         redirect('/reset-password');
       }
-      // For email confirmation, redirect to specified URL or profile
-      redirect(next === '/' ? '/profile' : next);
+      redirect('/confirm-success');
     }
   }
 
-  // redirect the user to an error page with some instructions
   redirect('/error');
 }
