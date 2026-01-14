@@ -31,7 +31,7 @@ jobs:
           PROD_DB: ${{ secrets.SUPABASE_DB_URL_PROD }}
         run: |
           # Dump only specific reference tables from Dev
-          pg_dump $DEV_DB \
+          pg_dump "$DEV_DB" \
             --data-only \
             --column-inserts \
             --table=public.pokemon_cards \
@@ -44,7 +44,7 @@ jobs:
 
           # Restore to Prod (ignoring errors if data exists/duplicates handled by upsert usually)
           # Note: If you need upsert behavior, use the custom script below instead of simple psql
-          psql $PROD_DB -f ref_data.sql
+          psql "$PROD_DB" -f ref_data.sql
 
       # 3. Sync Email Templates
       - name: Sync Email Templates
