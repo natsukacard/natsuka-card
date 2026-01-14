@@ -24,13 +24,13 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # 2. Sync Reference Data (Cards, Sets, Prices ONLY)
+      # 2. Sync Reference Data (Dev -> Prod)
       - name: Sync Reference Data (Dev -> Prod)
         env:
           DEV_DB: ${{ secrets.SUPABASE_DB_URL_DEV }}
           PROD_DB: ${{ secrets.SUPABASE_DB_URL_PROD }}
         run: |
-          # Dump only specific reference tables from Dev
+          # 1. Export data from Dev
           pg_dump "$DEV_DB" \
             --data-only \
             --column-inserts \
@@ -42,9 +42,13 @@ jobs:
             --table=public.card_prices \
             > ref_data.sql
 
-          # Restore to Prod (ignoring errors if data exists/duplicates handled by upsert usually)
-          # Note: If you need upsert behavior, use the custom script below instead of simple psql
-          psql "$PROD_DB" -f ref_data.sql
+          # 2. Create a "Safe Import" script that disables constraints temporarily
+          echo "SET session_replication_role = 'replica';" > import.sql
+          cat ref_data.sql >> import.sql
+          echo "SET session_replication_role = 'origin';" >> import.sql
+
+          # 3. Import to Prod
+          psql "$PROD_DB" -f import.sql
 
       # 3. Sync Email Templates
       - name: Sync Email Templates
