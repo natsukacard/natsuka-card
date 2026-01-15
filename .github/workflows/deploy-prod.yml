@@ -1,10 +1,24 @@
 name: Deploy to Production
 
 on:
-  workflow_dispatch: # Manual "Toggle" button in GitHub
-  push:
-    branches:
-      - main # Auto-runs on merge to main
+  # 1. We removed "push" so this ONLY runs when you click the button
+  workflow_dispatch:
+    inputs:
+      sync_schema:
+        description: 'Update Database Structure (Tables, RLS, Columns)'
+        type: boolean
+        required: true
+        default: true
+      sync_data:
+        description: 'Overwrite Reference Data (Pokemon Cards/Sets)'
+        type: boolean
+        required: true
+        default: false
+      sync_email:
+        description: 'Sync Email Templates'
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   deploy:
@@ -16,21 +30,29 @@ jobs:
         with:
           version: latest
 
-      # 1. Apply Schema Changes
+      # ---------------------------------------------------------
+      # STEP 1: Schema (RLS, Tables, Functions)
+      # Only runs if the "Sync Schema" checkbox is checked
+      # ---------------------------------------------------------
       - name: Link and Push Schema to Prod
+        if: ${{ inputs.sync_schema == true }}
         run: |
           supabase link --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }} --password ${{ secrets.SUPABASE_DB_PASSWORD_PROD }}
           supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # 2. Sync Reference Data (Dev -> Prod)
+      # ---------------------------------------------------------
+      # STEP 2: Data (The actual Rows of Cards)
+      # Only runs if the "Sync Data" checkbox is checked
+      # ---------------------------------------------------------
       - name: Sync Reference Data (Dev -> Prod)
+        if: ${{ inputs.sync_data == true }}
         env:
           DEV_DB: ${{ secrets.SUPABASE_DB_URL_DEV }}
           PROD_DB: ${{ secrets.SUPABASE_DB_URL_PROD }}
         run: |
-          # 1. Export Data from Dev (Strictly the 4 core tables)
+          # 1. Export Data from Dev
           pg_dump "$DEV_DB" \
             --data-only \
             --column-inserts \
@@ -40,21 +62,23 @@ jobs:
             --table=public.pokemon_sets_jp \
             > ref_data.sql
 
-          # 2. Create Import Script
-          #    - Disable FK constraints to prevent ordering issues
-          #    - TRUNCATE the 4 specific tables to clear old data/prevent duplicates
-          echo "SET session_replication_role = 'replica';" > import.sql
-          
+          # 2. Transaction Wrapper (Zero Downtime)
+          echo "BEGIN;" > import.sql
+          echo "SET session_replication_role = 'replica';" >> import.sql
           echo "TRUNCATE TABLE public.pokemon_cards_en, public.pokemon_sets_en, public.pokemon_cards_jp, public.pokemon_sets_jp CASCADE;" >> import.sql
-          
           cat ref_data.sql >> import.sql
           echo "SET session_replication_role = 'origin';" >> import.sql
+          echo "COMMIT;" >> import.sql
 
           # 3. Import to Prod
           psql "$PROD_DB" -f import.sql
 
-      # 3. Sync Email Templates
+      # ---------------------------------------------------------
+      # STEP 3: Email Templates
+      # Only runs if the "Sync Email" checkbox is checked
+      # ---------------------------------------------------------
       - name: Sync Email Templates
+        if: ${{ inputs.sync_email == true }}
         run: node scripts/sync-email-templates.js
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
